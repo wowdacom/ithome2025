@@ -14,4 +14,19 @@ describe("BlogService（邏輯層）", () => {
     const travel = blog.getByCategory("程式");
     expect(travel.map(a => a.title)).toEqual(["無瑕的程式碼－整潔的軟體設計與架構篇"]);
   });
+
+  it("查詢不存在分類時回傳空陣列", () => {
+    const repo = new InMemoryArticleRepository();
+    const blog = new BlogService(repo);
+    blog.addArticle({ title: "Clean Code 筆記", category: "程式" });
+    const none = blog.getByCategory("旅行");
+    expect(none).toEqual([]);
+  });
+
+  it("缺少必要欄位時丟出錯誤", () => {
+    const repo = new InMemoryArticleRepository();
+    const blog = new BlogService(repo);
+    expect(() => blog.addArticle({ title: "   ", category: "旅行" })).toThrowError("標題不可為空白");
+    expect(() => blog.addArticle({ title: "好文章", category: "" })).toThrowError("分類不可為空白");
+  });
 });
