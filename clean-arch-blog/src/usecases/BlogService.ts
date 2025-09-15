@@ -1,11 +1,11 @@
 import type { Article } from "../domain/Article";
-import type { ArticleRepository } from "../data/ArticleRepository";
+import type { AsyncArticleRepository } from "../data/AsyncArticleRepository";
 import { ValidationError } from "../domain/Errors";
 
 export class BlogService {
-  constructor(private repo: ArticleRepository) { }
+  constructor(private repo: AsyncArticleRepository) { }
 
-  addArticle(article: Article) {
+  async addArticle(article: Article): Promise<void> {
     const title = (article.title ?? "").trim();
     const category = (article.category ?? "").trim();
     const content = (article.content ?? "").trim();
@@ -21,13 +21,11 @@ export class BlogService {
     }
 
     // 可在此加入額外規則（例如：長度 / 禁用字詞）
-    this.repo.save({ title, category, content });
+    await this.repo.save({ title, category, content });
   }
-
-
-  getByCategory(category: string): Article[] {
+  async getByCategory(category: string): Promise<Article[]> {
     const target = (category ?? "").trim();
     if (!target) return [];
-    return this.repo.getAll().filter(a => a.category === target);
+    return await this.repo.getByCategory(target);
   }
 }
