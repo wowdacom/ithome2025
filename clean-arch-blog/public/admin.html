@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>部落格後台管理</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -121,284 +122,549 @@
         border-radius: 4px;
         margin: 10px 0;
       }
+      .message {
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .message.success {
+        color: #155724;
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+      }
+      .message.error {
+        color: #721c24;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+      }
+      button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      .fade-enter-active,
+      .fade-leave-active {
+        transition: opacity 0.3s;
+      }
+      .fade-enter-from,
+      .fade-leave-to {
+        opacity: 0;
+      }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>部落格後台管理</h1>
+    <div id="app">
+      <div class="container">
+        <h1>部落格後台管理</h1>
 
-      <!-- 新增文章表單 -->
-      <section>
-        <h2>新增文章</h2>
-        <form id="createForm">
-          <div class="form-group">
-            <label for="title">標題</label>
-            <input type="text" id="title" name="title" required />
-          </div>
-          <div class="form-group">
-            <label for="category">分類</label>
-            <input type="text" id="category" name="category" required />
-          </div>
-          <div class="form-group">
-            <label for="content">內容</label>
-            <textarea id="content" name="content" required></textarea>
-          </div>
-          <button type="submit">新增文章</button>
-          <button type="reset" class="secondary">清除</button>
-        </form>
-      </section>
+        <!-- 訊息提示組件 -->
+        <message-display
+          :message="message"
+          @clear="clearMessage"
+        ></message-display>
 
-      <!-- 搜尋區域 -->
-      <section>
-        <h2>搜尋文章</h2>
-        <div class="search-section">
-          <div class="search-row">
-            <div>
-              <label for="searchKeyword">關鍵字</label>
-              <input
-                type="text"
-                id="searchKeyword"
-                placeholder="搜尋標題或內容"
-              />
-            </div>
-            <div>
-              <label for="searchCategory">分類</label>
-              <input type="text" id="searchCategory" placeholder="特定分類" />
-            </div>
-          </div>
-          <div class="search-row">
-            <div>
-              <label for="searchDateFrom">開始日期</label>
-              <input type="date" id="searchDateFrom" />
-            </div>
-            <div>
-              <label for="searchDateTo">結束日期</label>
-              <input type="date" id="searchDateTo" />
-            </div>
-          </div>
-          <button onclick="searchArticles()">搜尋</button>
-          <button onclick="loadAllArticles()" class="secondary">
-            顯示全部
-          </button>
-        </div>
-      </section>
+        <!-- 新增文章表單組件 -->
+        <article-form
+          ref="articleForm"
+          :loading="loading"
+          @create-article="handleCreateArticle"
+        ></article-form>
 
-      <!-- 文章列表 -->
-      <section>
-        <h2>文章列表</h2>
-        <div id="articlesContainer">
-          <div class="loading">載入中...</div>
-        </div>
-      </section>
+        <!-- 搜尋組件 -->
+        <article-search
+          :loading="loading"
+          @search="handleSearch"
+          @load-all="handleLoadAll"
+        ></article-search>
+
+        <!-- 文章列表組件 -->
+        <article-list
+          :articles="articles"
+          :loading="loading"
+          @update-article="handleUpdateArticle"
+        ></article-list>
+      </div>
     </div>
 
     <script>
-      const API_BASE = "/api";
+      const { createApp } = Vue;
 
-      // 載入所有文章
-      async function loadAllArticles() {
-        try {
-          showLoading();
-          const response = await fetch(`${API_BASE}/articles`);
-          const articles = await response.json();
-          displayArticles(articles);
-        } catch (error) {
-          showError("載入文章失敗: " + error.message);
-        }
-      }
-
-      // 搜尋文章
-      async function searchArticles() {
-        try {
-          showLoading();
-          const params = new URLSearchParams();
-
-          const keyword = document.getElementById("searchKeyword").value.trim();
-          const category = document
-            .getElementById("searchCategory")
-            .value.trim();
-          const dateFrom = document.getElementById("searchDateFrom").value;
-          const dateTo = document.getElementById("searchDateTo").value;
-
-          if (keyword) params.set("keyword", keyword);
-          if (category) params.set("category", category);
-          if (dateFrom) params.set("dateFrom", dateFrom);
-          if (dateTo) params.set("dateTo", dateTo);
-
-          const response = await fetch(`${API_BASE}/articles/search?${params}`);
-          const articles = await response.json();
-          displayArticles(articles);
-        } catch (error) {
-          showError("搜尋失敗: " + error.message);
-        }
-      }
-
-      // 新增文章
-      document
-        .getElementById("createForm")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          try {
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
-
-            const response = await fetch(`${API_BASE}/articles`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(data),
-            });
-
-            if (response.ok) {
-              showSuccess("文章新增成功");
-              e.target.reset();
-              loadAllArticles();
-            } else {
-              const error = await response.json();
-              showError("新增失敗: " + (error.message || response.statusText));
+      // MessageDisplay 組件 - 處理訊息顯示
+      const MessageDisplay = {
+        props: ["message"],
+        emits: ["clear"],
+        template: `
+          <div v-if="message.text" :class="['message', message.type]">
+            {{ message.text }}
+          </div>
+        `,
+        mounted() {
+          if (this.message.text) {
+            setTimeout(
+              () => {
+                this.$emit("clear");
+              },
+              this.message.type === "error" ? 5000 : 3000
+            );
+          }
+        },
+        watch: {
+          "message.text"() {
+            if (this.message.text) {
+              setTimeout(
+                () => {
+                  this.$emit("clear");
+                },
+                this.message.type === "error" ? 5000 : 3000
+              );
             }
-          } catch (error) {
-            showError("新增失敗: " + error.message);
-          }
-        });
+          },
+        },
+      };
 
-      // 更新文章
-      async function updateArticle(id, data) {
-        try {
-          const response = await fetch(`${API_BASE}/articles/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
+      // ArticleForm 組件 - 新增文章表單
+      const ArticleForm = {
+        props: ["loading"],
+        emits: ["create-article"],
+        data() {
+          return {
+            form: {
+              title: "",
+              category: "",
+              content: "",
+            },
+          };
+        },
+        template: `
+          <section>
+            <h2>新增文章</h2>
+            <form @submit.prevent="handleSubmit">
+              <div class="form-group">
+                <label for="title">標題</label>
+                <input 
+                  type="text" 
+                  id="title" 
+                  v-model="form.title" 
+                  required 
+                />
+              </div>
+              <div class="form-group">
+                <label for="category">分類</label>
+                <input 
+                  type="text" 
+                  id="category" 
+                  v-model="form.category" 
+                  required 
+                />
+              </div>
+              <div class="form-group">
+                <label for="content">內容</label>
+                <textarea 
+                  id="content" 
+                  v-model="form.content" 
+                  required
+                ></textarea>
+              </div>
+              <button type="submit" :disabled="loading">
+                {{ loading ? '新增中...' : '新增文章' }}
+              </button>
+              <button type="button" @click="resetForm" class="secondary">
+                清除
+              </button>
+            </form>
+          </section>
+        `,
+        methods: {
+          handleSubmit() {
+            this.$emit("create-article", { ...this.form });
+          },
+          resetForm() {
+            this.form = {
+              title: "",
+              category: "",
+              content: "",
+            };
+          },
+          clearForm() {
+            this.resetForm();
+          },
+        },
+      };
 
-          if (response.ok) {
-            showSuccess("文章更新成功");
-            loadAllArticles();
-          } else {
-            const error = await response.json();
-            showError("更新失敗: " + (error.message || response.statusText));
-          }
-        } catch (error) {
-          showError("更新失敗: " + error.message);
-        }
-      }
-
-      // 顯示文章列表
-      function displayArticles(articles) {
-        const container = document.getElementById("articlesContainer");
-
-        if (articles.length === 0) {
-          container.innerHTML = '<div class="loading">沒有找到文章</div>';
-          return;
-        }
-
-        container.innerHTML = articles
-          .map(
-            (article) => `
-                <div class="article-item">
-                    <h3>${escapeHtml(article.title)}</h3>
-                    <div class="article-meta">
-                        分類: ${escapeHtml(article.category)} | 
-                        建立: ${formatDate(article.created_at)} |
-                        更新: ${formatDate(article.updated_at)}
-                    </div>
-                    <p>${escapeHtml(article.content.substring(0, 150))}${
-              article.content.length > 150 ? "..." : ""
-            }</p>
-                    <div class="article-actions">
-                        <button onclick="toggleEdit('${
-                          article.id
-                        }')">編輯</button>
-                    </div>
-                    <div id="edit-${article.id}" class="edit-form">
-                        <form onsubmit="submitEdit(event, '${article.id}')">
-                            <div class="form-group">
-                                <label>標題</label>
-                                <input type="text" name="title" value="${escapeHtml(
-                                  article.title
-                                )}" required>
-                            </div>
-                            <div class="form-group">
-                                <label>分類</label>
-                                <input type="text" name="category" value="${escapeHtml(
-                                  article.category
-                                )}" required>
-                            </div>
-                            <div class="form-group">
-                                <label>內容</label>
-                                <textarea name="content" required>${escapeHtml(
-                                  article.content
-                                )}</textarea>
-                            </div>
-                            <button type="submit">更新</button>
-                            <button type="button" onclick="toggleEdit('${
-                              article.id
-                            }')" class="secondary">取消</button>
-                        </form>
-                    </div>
+      // ArticleSearch 組件 - 搜尋功能
+      const ArticleSearch = {
+        props: ["loading"],
+        emits: ["search", "load-all"],
+        data() {
+          return {
+            filters: {
+              keyword: "",
+              category: "",
+              dateFrom: "",
+              dateTo: "",
+            },
+          };
+        },
+        template: `
+          <section>
+            <h2>搜尋文章</h2>
+            <div class="search-section">
+              <div class="search-row">
+                <div>
+                  <label for="searchKeyword">關鍵字</label>
+                  <input
+                    type="text"
+                    id="searchKeyword"
+                    v-model="filters.keyword"
+                    placeholder="搜尋標題或內容"
+                  />
                 </div>
-            `
-          )
-          .join("");
-      }
+                <div>
+                  <label for="searchCategory">分類</label>
+                  <input 
+                    type="text" 
+                    id="searchCategory" 
+                    v-model="filters.category"
+                    placeholder="特定分類" 
+                  />
+                </div>
+              </div>
+              <div class="search-row">
+                <div>
+                  <label for="searchDateFrom">開始日期</label>
+                  <input 
+                    type="date" 
+                    id="searchDateFrom" 
+                    v-model="filters.dateFrom"
+                  />
+                </div>
+                <div>
+                  <label for="searchDateTo">結束日期</label>
+                  <input 
+                    type="date" 
+                    id="searchDateTo" 
+                    v-model="filters.dateTo"
+                  />
+                </div>
+              </div>
+              <button @click="handleSearch" :disabled="loading">
+                {{ loading ? '搜尋中...' : '搜尋' }}
+              </button>
+              <button @click="handleLoadAll" class="secondary" :disabled="loading">
+                顯示全部
+              </button>
+            </div>
+          </section>
+        `,
+        methods: {
+          handleSearch() {
+            this.$emit("search", { ...this.filters });
+          },
+          handleLoadAll() {
+            this.$emit("load-all");
+          },
+        },
+      };
 
-      // 切換編輯表單
-      function toggleEdit(id) {
-        const form = document.getElementById(`edit-${id}`);
-        form.style.display = form.style.display === "none" ? "block" : "none";
-      }
+      // ArticleList 組件 - 文章列表和編輯
+      const ArticleList = {
+        props: ["articles", "loading"],
+        emits: ["update-article"],
+        data() {
+          return {
+            editingId: null,
+            editForm: {
+              title: "",
+              category: "",
+              content: "",
+            },
+          };
+        },
+        template: `
+          <section>
+            <h2>文章列表</h2>
+            <div v-if="loading && articles.length === 0" class="loading">
+              載入中...
+            </div>
+            <div v-else-if="articles.length === 0" class="loading">
+              沒有找到文章
+            </div>
+            <div v-else>
+              <div 
+                v-for="article in articles" 
+                :key="article.id" 
+                class="article-item"
+              >
+                <h3>{{ article.title }}</h3>
+                <div class="article-meta">
+                  分類: {{ article.category }} | 
+                  建立: {{ formatDate(article.created_at) }} |
+                  更新: {{ formatDate(article.updated_at) }}
+                </div>
+                <p>
+                  {{ article.content.substring(0, 150) }}
+                  <span v-if="article.content.length > 150">...</span>
+                </p>
+                <div class="article-actions">
+                  <button @click="toggleEdit(article.id)">編輯</button>
+                </div>
+                
+                <!-- 編輯表單 -->
+                <div 
+                  v-if="editingId === article.id" 
+                  class="edit-form"
+                >
+                  <form @submit.prevent="handleUpdate(article.id)">
+                    <div class="form-group">
+                      <label>標題</label>
+                      <input 
+                        type="text" 
+                        v-model="editForm.title" 
+                        required
+                      >
+                    </div>
+                    <div class="form-group">
+                      <label>分類</label>
+                      <input 
+                        type="text" 
+                        v-model="editForm.category" 
+                        required
+                      >
+                    </div>
+                    <div class="form-group">
+                      <label>內容</label>
+                      <textarea 
+                        v-model="editForm.content" 
+                        required
+                      ></textarea>
+                    </div>
+                    <button type="submit" :disabled="loading">
+                      {{ loading ? '更新中...' : '更新' }}
+                    </button>
+                    <button 
+                      type="button" 
+                      @click="cancelEdit" 
+                      class="secondary"
+                    >
+                      取消
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </section>
+        `,
+        methods: {
+          toggleEdit(id) {
+            if (this.editingId === id) {
+              this.cancelEdit();
+            } else {
+              const article = this.articles.find((a) => a.id === id);
+              if (article) {
+                this.editingId = id;
+                this.editForm = {
+                  title: article.title,
+                  category: article.category,
+                  content: article.content,
+                };
+              }
+            }
+          },
+          cancelEdit() {
+            this.editingId = null;
+            this.editForm = {
+              title: "",
+              category: "",
+              content: "",
+            };
+          },
+          handleUpdate(id) {
+            this.$emit("update-article", id, { ...this.editForm });
+            this.cancelEdit();
+          },
+          formatDate(dateStr) {
+            if (!dateStr) return "N/A";
+            return new Date(dateStr).toLocaleString("zh-TW");
+          },
+        },
+      };
 
-      // 提交編輯
-      function submitEdit(e, id) {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData);
-        updateArticle(id, data);
-        toggleEdit(id);
-      }
+      // 主應用程式
+      createApp({
+        components: {
+          MessageDisplay,
+          ArticleForm,
+          ArticleSearch,
+          ArticleList,
+        },
+        data() {
+          return {
+            // 狀態管理
+            loading: false,
+            articles: [],
 
-      // 工具函數
-      function showLoading() {
-        document.getElementById("articlesContainer").innerHTML =
-          '<div class="loading">載入中...</div>';
-      }
+            // 訊息系統
+            message: {
+              text: "",
+              type: "",
+            },
+          };
+        },
 
-      function showError(message) {
-        const existing = document.querySelector(".error");
-        if (existing) existing.remove();
+        mounted() {
+          this.loadAllArticles();
+        },
 
-        const div = document.createElement("div");
-        div.className = "error";
-        div.textContent = message;
-        document.querySelector(".container").prepend(div);
+        methods: {
+          // API 設定
+          getApiUrl(path) {
+            return `/api${path}`;
+          },
 
-        setTimeout(() => div.remove(), 5000);
-      }
+          // 訊息處理
+          showMessage(text, type = "success") {
+            this.message = { text, type };
+          },
 
-      function showSuccess(message) {
-        const existing = document.querySelector(".success");
-        if (existing) existing.remove();
+          clearMessage() {
+            this.message = { text: "", type: "" };
+          },
 
-        const div = document.createElement("div");
-        div.className = "success";
-        div.textContent = message;
-        document.querySelector(".container").prepend(div);
+          showError(text) {
+            this.showMessage(text, "error");
+          },
 
-        setTimeout(() => div.remove(), 3000);
-      }
+          showSuccess(text) {
+            this.showMessage(text, "success");
+          },
 
-      function escapeHtml(text) {
-        const div = document.createElement("div");
-        div.textContent = text;
-        return div.innerHTML;
-      }
+          // 載入所有文章
+          async loadAllArticles() {
+            try {
+              this.loading = true;
+              const response = await fetch(this.getApiUrl("/articles"));
 
-      function formatDate(dateStr) {
-        if (!dateStr) return "N/A";
-        return new Date(dateStr).toLocaleString("zh-TW");
-      }
+              if (!response.ok) {
+                throw new Error(
+                  `HTTP ${response.status}: ${response.statusText}`
+                );
+              }
 
-      // 頁面載入時執行
-      document.addEventListener("DOMContentLoaded", loadAllArticles);
+              this.articles = await response.json();
+            } catch (error) {
+              this.showError("載入文章失敗: " + error.message);
+              console.error("載入文章錯誤:", error);
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          // 搜尋文章
+          async searchArticles(filters) {
+            try {
+              this.loading = true;
+              const params = new URLSearchParams();
+
+              if (filters.keyword) params.set("keyword", filters.keyword);
+              if (filters.category) params.set("category", filters.category);
+              if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+              if (filters.dateTo) params.set("dateTo", filters.dateTo);
+
+              const url =
+                this.getApiUrl("/articles/search") +
+                (params.toString() ? "?" + params.toString() : "");
+              const response = await fetch(url);
+
+              if (!response.ok) {
+                throw new Error(
+                  `HTTP ${response.status}: ${response.statusText}`
+                );
+              }
+
+              this.articles = await response.json();
+            } catch (error) {
+              this.showError("搜尋失敗: " + error.message);
+              console.error("搜尋錯誤:", error);
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          // 新增文章
+          async createArticle(articleData) {
+            try {
+              this.loading = true;
+
+              const response = await fetch(this.getApiUrl("/articles"), {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(articleData),
+              });
+
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || response.statusText);
+              }
+
+              this.showSuccess("文章新增成功");
+              this.$refs.articleForm.clearForm();
+              await this.loadAllArticles();
+            } catch (error) {
+              this.showError("新增失敗: " + error.message);
+              console.error("新增文章錯誤:", error);
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          // 更新文章
+          async updateArticle(id, updateData) {
+            try {
+              this.loading = true;
+
+              const response = await fetch(this.getApiUrl(`/articles/${id}`), {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updateData),
+              });
+
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || response.statusText);
+              }
+
+              this.showSuccess("文章更新成功");
+              await this.loadAllArticles();
+            } catch (error) {
+              this.showError("更新失敗: " + error.message);
+              console.error("更新文章錯誤:", error);
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          // 組件事件處理器
+          handleCreateArticle(articleData) {
+            this.createArticle(articleData);
+          },
+
+          handleSearch(filters) {
+            this.searchArticles(filters);
+          },
+
+          handleLoadAll() {
+            this.loadAllArticles();
+          },
+
+          handleUpdateArticle(id, updateData) {
+            this.updateArticle(id, updateData);
+          },
+        },
+      }).mount("#app");
     </script>
   </body>
 </html>

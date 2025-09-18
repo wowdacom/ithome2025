@@ -1,0 +1,26 @@
+# 設定所有文字檔案使用 LF 行尾
+* text=auto eol=lf
+
+# 特定副檔名使用 LF
+*.js text eol=lf
+*.ts text eol=lf
+*.vue text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# 二進位檔案不進行行尾轉換
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
