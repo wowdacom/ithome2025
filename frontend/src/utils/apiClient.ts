@@ -12,7 +12,7 @@ export class ApiError extends Error {
 export class ApiClient {
     private baseUrl: string
 
-    constructor(baseUrl = '/api') {
+    constructor(baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api') {
         this.baseUrl = baseUrl
     }
 
@@ -26,11 +26,13 @@ export class ApiClient {
             )
         }
 
-        return response.json()
+        // 處理後端回應格式 { data: T }
+        const result = await response.json()
+        return result.data !== undefined ? result.data : result
     }
 
     async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
-        const url = new URL(`${this.baseUrl}${endpoint}`, window.location.origin)
+        const url = new URL(`${this.baseUrl}${endpoint}`)
 
         if (params) {
             Object.entries(params).forEach(([key, value]) => {
@@ -70,6 +72,11 @@ export class ApiClient {
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method: 'DELETE',
         })
+
+        // DELETE 回應可能是空的 (204 No Content)
+        if (response.status === 204) {
+            return undefined as T
+        }
 
         return this.handleResponse<T>(response)
     }
