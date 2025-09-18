@@ -1,6 +1,6 @@
-# Clean Architecture Blog System
+# Backend Server with Clean Architecture
 
-此專案是一個完整的 Blog 管理系統，採用 Clean Architecture 設計模式，包含後端 API 和前端後台管理介面。
+此專案是一個採用 Clean Architecture 設計模式的後端 API 伺服器，為部落格系統提供完整的 RESTful API 服務。
 
 ## 功能特色
 
