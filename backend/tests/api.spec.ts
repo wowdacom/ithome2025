@@ -169,6 +169,58 @@ describe('Article API - 完整 CRUD 與搜尋', () => {
     });
   });
 
+  describe('DELETE /api/articles/:id - 刪除文章', () => {
+    it('可以刪除文章', async () => {
+      // 先新增一篇文章
+      const createResponse = await request(app)
+        .post('/api/articles')
+        .send({ title: '要刪除的文章', category: '測試', content: '測試內容' });
+
+      const articleId = createResponse.body.id;
+
+      // 刪除文章
+      const response = await request(app)
+        .delete(`/api/articles/${articleId}`);
+
+      expect(response.status).toBe(204); // No Content
+      expect(response.body).toEqual({});
+
+      // 確認文章已被刪除
+      const getResponse = await request(app)
+        .get(`/api/articles/${articleId}`);
+
+      expect(getResponse.status).toBe(404);
+    });
+
+    it('刪除不存在的文章時回傳 404', async () => {
+      const response = await request(app)
+        .delete('/api/articles/not-exist');
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe('找不到指定的文章');
+    });
+
+    it('刪除文章需要認證', async () => {
+      // 先新增一篇文章
+      const createResponse = await request(app)
+        .post('/api/articles')
+        .send({ title: '需認證刪除', category: '測試', content: '測試內容' });
+
+      const articleId = createResponse.body.id;
+
+      // 暫時啟用認證來測試
+      delete process.env.DISABLE_AUTH;
+
+      const response = await request(app)
+        .delete(`/api/articles/${articleId}`);
+
+      expect(response.status).toBe(401);
+
+      // 重新停用認證
+      process.env.DISABLE_AUTH = 'true';
+    });
+  });
+
   describe('GET /api/articles/search - 搜尋文章', () => {
     beforeEach(async () => {
       // 新增測試資料

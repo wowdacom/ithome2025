@@ -12,6 +12,7 @@ export function buildArticleRoutes(controller: ArticleController): Router {
     r.get("/articles/:id", controller.getById);
     r.put("/articles/:id", auth, controller.update);
     r.patch("/articles/:id", auth, controller.update);
+    r.delete("/articles/:id", auth, controller.delete);
 
     // 依分類查詢（保持向後相容）
     r.get("/articles/category/:category", controller.getByCategory);

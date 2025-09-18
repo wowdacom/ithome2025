@@ -59,6 +59,14 @@ export class InMemoryArticleRepositoryAsync implements AsyncArticleRepository {
     return updatedArticle;
   }
 
+  async delete(id: string): Promise<void> {
+    const index = this.store.findIndex(a => a.id === id);
+    if (index === -1) {
+      throw new Error('ARTICLE_NOT_FOUND');
+    }
+    this.store.splice(index, 1);
+  }
+
   async search(filters: SearchFilters): Promise<Article[]> {
     let results = [...this.store];
 

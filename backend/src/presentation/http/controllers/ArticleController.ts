@@ -67,4 +67,14 @@ export class ArticleController {
             next(err);
         }
     };
+
+    delete = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const id = String(req.params.id || "");
+            await this.blog.deleteArticle(id);
+            res.status(204).send(); // No Content
+        } catch (err) {
+            next(err);
+        }
+    };
 }

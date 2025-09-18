@@ -102,4 +102,18 @@ export class BlogService {
   async getAllArticles(): Promise<Article[]> {
     return await this.repo.getAll();
   }
+
+  async deleteArticle(id: string): Promise<void> {
+    if (!id?.trim()) {
+      throw new ValidationError("ID_REQUIRED", "文章 ID 不可為空");
+    }
+
+    // 檢查文章是否存在
+    const existing = await this.repo.getById(id);
+    if (!existing) {
+      throw new ValidationError("ARTICLE_NOT_FOUND", "找不到指定的文章");
+    }
+
+    await this.repo.delete(id);
+  }
 }

@@ -13,5 +13,6 @@ export interface AsyncArticleRepository {
   getByCategory(category: string): Promise<Article[]>;
   getById(id: string): Promise<Article | null>;
   update(id: string, updates: Partial<Article>): Promise<Article>;
+  delete(id: string): Promise<void>;
   search(filters: SearchFilters): Promise<Article[]>;
 }
