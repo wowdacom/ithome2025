@@ -65,7 +65,7 @@ import type { Article } from '@/types/article'
 import { formatDate, truncateText } from '@/utils/helpers'
 
 interface Props {
-  articles: Article[]
+  articles?: Article[]
   loading?: boolean
 }
 
@@ -76,6 +76,7 @@ interface Emits {
 
 withDefaults(defineProps<Props>(), {
   loading: false,
+  articles: () => [],
 })
 
 const emit = defineEmits<Emits>()
