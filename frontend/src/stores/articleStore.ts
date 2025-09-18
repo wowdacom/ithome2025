@@ -69,6 +69,20 @@ export const useArticleStore = defineStore('article', () => {
         }
     }
 
+    async function getArticleById(id: string): Promise<Article | null> {
+        try {
+            loading.value = true
+            const result = await articleService.getById(id)
+            return result
+        } catch (error) {
+            showMessage('載入文章失敗: ' + (error as Error).message, 'error')
+            console.error('載入文章錯誤:', error)
+            throw error
+        } finally {
+            loading.value = false
+        }
+    }
+
     function showMessage(text: string, type: 'success' | 'error' | 'info' = 'info') {
         message.value.text = text
         message.value.type = type
@@ -89,6 +103,7 @@ export const useArticleStore = defineStore('article', () => {
         createArticle,
         searchArticles,
         deleteArticle,
+        getArticleById,
         showMessage,
         clearMessage
     }
