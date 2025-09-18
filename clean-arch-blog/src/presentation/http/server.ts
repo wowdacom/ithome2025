@@ -5,10 +5,14 @@ import { articleController } from "../../config/container";
 import { buildArticleRoutes } from "./routes/articleRoutes";
 import { errorHandler } from "./middlewares/errorHandler";
 import { notFound } from "./middlewares/notFound";
+import { cors } from "./middlewares/cors";
 import { ENV } from "../../config/env";
 
 export function createApp() {
     const app = express();
+
+    // CORS 中介軟體（必須在其他中介軟體之前）
+    app.use(cors);
 
     // 中介軟體
     app.use(express.json());
@@ -43,8 +47,8 @@ const isMainModule = process.argv[1] === __filename;
 
 if (isMainModule) {
     const app = createApp();
-    app.listen(ENV.PORT, () => {
-        console.log(`Server listening on port ${ENV.PORT}`);
+    app.listen(ENV.PORT, '0.0.0.0', () => {
+        console.log(`Server listening on port ${ENV.PORT} (all interfaces)`);
         console.log(`Admin panel: http://localhost:${ENV.PORT}/admin.html`);
     });
 }
