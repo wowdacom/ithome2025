@@ -1,5 +1,5 @@
 <template>
-  <div v-if="message.text" :class="['message', message.type]">
+  <div v-if="message?.text" :class="['message', message.type]">
     {{ message.text }}
   </div>
 </template>
@@ -9,14 +9,16 @@ import { watch, onMounted } from 'vue'
 import type { MessageState } from '@/types/article'
 
 interface Props {
-  message: MessageState
+  message?: MessageState
 }
 
 interface Emits {
   (e: 'clear'): void
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  message: () => ({ text: '', type: 'info' }),
+})
 const emit = defineEmits<Emits>()
 
 // Constants for timeout durations
@@ -31,7 +33,7 @@ function clearMessage() {
 }
 
 function setupAutoClearing() {
-  if (props.message.text) {
+  if (props.message?.text) {
     const timeout = TIMEOUT_DURATION[props.message.type] || TIMEOUT_DURATION.info
     setTimeout(clearMessage, timeout)
   }
@@ -44,7 +46,7 @@ onMounted(() => {
 
 // Auto clear when message changes
 watch(
-  () => props.message.text,
+  () => props.message?.text,
   () => {
     setupAutoClearing()
   },

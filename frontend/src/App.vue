@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import MessageDisplay from './components/MessageDisplay.vue'
 import ArticleForm from './components/ArticleForm.vue'
 import ArticleSearch from './components/ArticleSearch.vue'
@@ -37,8 +38,8 @@ const articleSearch = ref<InstanceType<typeof ArticleSearch>>()
 // 使用 Pinia store
 const store = useArticleStore()
 
-// 從 store 取得狀態 (使用 computed 保持響應性)
-const { articles, loading, message } = store
+// 從 store 取得狀態 (使用 storeToRefs 保持響應性)
+const { articles, loading, message } = storeToRefs(store)
 
 // 編輯狀態（暫時保留在組件層級）
 const editingArticle = ref<Article | null>(null)

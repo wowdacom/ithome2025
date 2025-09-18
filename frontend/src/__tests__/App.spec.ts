@@ -1,21 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { ref } from 'vue'
 import App from '../App.vue'
 import type { Article } from '../types/article'
 
-// Mock useArticleStore
-const mockStore = {
-  articles: [] as Article[],
-  loading: false,
-  message: { text: '', type: 'info' as const },
+// Mock useArticleStore with reactive refs
+const createMockStore = () => ({
+  articles: ref([] as Article[]),
+  loading: ref(false),
+  message: ref({ text: '', type: 'info' as const }),
   loadArticles: vi.fn(),
   createArticle: vi.fn(),
   searchArticles: vi.fn(),
   deleteArticle: vi.fn(),
   showMessage: vi.fn(),
   clearMessage: vi.fn()
-}
+})
+
+const mockStore = createMockStore()
 
 vi.mock('../stores/articleStore', () => ({
   useArticleStore: () => mockStore
@@ -27,16 +30,16 @@ describe('App', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
 
-    // Reset mock store state
-    mockStore.articles = []
-    mockStore.loading = false
-    mockStore.message = { text: '', type: 'info' }
+    // Reset mock store state using .value for refs
+    mockStore.articles.value = []
+    mockStore.loading.value = false
+    mockStore.message.value = { text: '', type: 'info' }
   })
 
   it('mounts renders properly', () => {
-    mount(App)
+    const wrapper = mount(App)
     // Test passes if no errors are thrown
-    expect(true).toBe(true)
+    expect(wrapper.exists()).toBe(true)
   })
 
   it('should load articles from store on mount', async () => {
@@ -122,7 +125,7 @@ describe('App', () => {
       }
     ]
 
-    mockStore.articles = existingArticles
+    mockStore.articles.value = existingArticles
 
     // Mock window.confirm 返回 true（確認刪除）
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
