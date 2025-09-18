@@ -43,7 +43,7 @@ describe('App', () => {
   })
 
   it('should load articles from store on mount', async () => {
-    const wrapper = mount(App)
+    mount(App)
     await flushPromises()
 
     // 驗證 store.loadArticles 在 onMounted 時被調用
