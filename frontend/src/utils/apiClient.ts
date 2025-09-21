@@ -12,7 +12,7 @@ export class ApiError extends Error {
 export class ApiClient {
     private baseUrl: string
 
-    constructor(baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api') {
+    constructor(baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api') {
         this.baseUrl = baseUrl
     }
 

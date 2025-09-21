@@ -177,6 +177,27 @@ export class SupabaseArticleRepository implements AsyncArticleRepository {
     return this.mapToArticle(data);
   }
 
+  async delete(id: string): Promise<void> {
+    this.ensureClient();
+
+    // Attempt deletion; if no rows affected that's acceptable (treat as idempotent)
+    const { data, error } = await this.client!.from('articles')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      // If error indicates no rows or relation not found, surface a clear error
+      if (error.code === 'PGRST116') {
+        // No rows returned — treat as not found and return
+        return;
+      }
+      throw new Error(`DB_DELETE_FAILED: ${error.message}`);
+    }
+
+    // deletion successful (or no rows affected)
+    return;
+  }
+
   async search(filters: SearchFilters): Promise<Article[]> {
     this.ensureClient();
 
