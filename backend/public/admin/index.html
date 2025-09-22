@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>部落格後台管理系統</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f5f5f5;
+        min-height: 100vh;
+      }
+
+      .admin-layout {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* 側邊欄樣式 */
+      .sidebar {
+        width: 260px;
+        background: #2c3e50;
+        color: white;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+      }
+
+      .sidebar-header {
+        padding: 20px;
+        background: #34495e;
+        border-bottom: 1px solid #3d566e;
+      }
+
+      .sidebar-header h1 {
+        font-size: 1.4em;
+        margin: 0;
+        color: #ecf0f1;
+      }
+
+      .nav-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .nav-item {
+        border-bottom: 1px solid #3d566e;
+      }
+
+      .nav-link {
+        display: block;
+        padding: 16px 20px;
+        color: #bdc3c7;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .nav-link:hover {
+        background: #34495e;
+        color: #ecf0f1;
+        padding-left: 30px;
+      }
+
+      .nav-link.active {
+        background: #3498db;
+        color: white;
+        border-left: 4px solid #2980b9;
+      }
+
+      .nav-link.active:hover {
+        background: #2980b9;
+        padding-left: 20px;
+      }
+
+      .nav-icon {
+        margin-right: 10px;
+        width: 16px;
+        display: inline-block;
+      }
+
+      /* 主內容區域 */
+      .main-content {
+        flex: 1;
+        margin-left: 260px;
+        background: #f5f5f5;
+        min-height: 100vh;
+      }
+
+      .content-header {
+        background: white;
+        padding: 20px 30px;
+        border-bottom: 1px solid #dee2e6;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .content-header h2 {
+        color: #2c3e50;
+        margin: 0;
+        font-size: 1.6em;
+      }
+
+      .breadcrumb {
+        color: #7f8c8d;
+        font-size: 0.9em;
+        margin-top: 5px;
+      }
+
+      .content-body {
+        padding: 30px;
+      }
+
+      .page-content {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        min-height: 600px;
+      }
+
+      /* 響應式設計 */
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+          transition: transform 0.3s ease;
+        }
+
+        .sidebar.open {
+          transform: translateX(0);
+        }
+
+        .main-content {
+          margin-left: 0;
+        }
+
+        .mobile-menu-btn {
+          display: block;
+          position: fixed;
+          top: 20px;
+          left: 20px;
+          z-index: 1001;
+          background: #3498db;
+          color: white;
+          border: none;
+          padding: 10px;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+      }
+
+      .mobile-menu-btn {
+        display: none;
+      }
+
+      /* 載入動畫 */
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #7f8c8d;
+        font-style: italic;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* 淡入動畫 */
+      .fade-enter-active,
+      .fade-leave-active {
+        transition: opacity 0.3s ease;
+      }
+      .fade-enter-from,
+      .fade-leave-to {
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="admin-layout">
+        <!-- 手機版選單按鈕 -->
+        <button class="mobile-menu-btn" @click="toggleSidebar">☰</button>
+
+        <!-- 側邊欄 -->
+        <aside :class="['sidebar', { open: sidebarOpen }]">
+          <div class="sidebar-header">
+            <h1>部落格管理系統</h1>
+          </div>
+          <nav>
+            <ul class="nav-menu">
+              <li class="nav-item">
+                <a
+                  :class="['nav-link', { active: currentPage === 'dashboard' }]"
+                  @click="navigateTo('dashboard')"
+                >
+                  <span class="nav-icon">■</span>
+                  控制台
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  :class="['nav-link', { active: currentPage === 'create-article' }]"
+                  @click="navigateTo('create-article')"
+                >
+                  <span class="nav-icon">+</span>
+                  新增文章
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  :class="['nav-link', { active: currentPage === 'manage-articles' }]"
+                  @click="navigateTo('manage-articles')"
+                >
+                  <span class="nav-icon">≡</span>
+                  文章管理
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </aside>
+
+        <!-- 主內容區域 -->
+        <main class="main-content">
+          <header class="content-header">
+            <h2>{{ pageTitle }}</h2>
+            <div class="breadcrumb">{{ breadcrumb }}</div>
+          </header>
+
+          <div class="content-body">
+            <div class="page-content">
+              <!-- 載入狀態 -->
+              <div v-if="pageLoading" class="loading">
+                <span class="loading-spinner"></span>
+                載入中...
+              </div>
+
+              <!-- 動態載入頁面內容 -->
+              <transition name="fade" mode="out-in">
+                <component
+                  :is="currentPageComponent"
+                  :key="currentPage"
+                  @page-loaded="onPageLoaded"
+                ></component>
+              </transition>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+
+      // 控制台組件
+      const DashboardPage = {
+        template: `
+          <div>
+            <h3>歡迎使用部落格管理系統</h3>
+            <div style="margin-top: 20px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div style="background: #0066cc; color: white; padding: 20px; border-radius: 8px;">
+                  <h4>文章管理</h4>
+                  <p>管理您的所有文章內容</p>
+                  <button @click="$emit('navigate', 'manage-articles')" 
+                          style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                    前往管理
+                  </button>
+                </div>
+                <div style="background: #28a745; color: white; padding: 20px; border-radius: 8px;">
+                  <h4>創作新文章</h4>
+                  <p>使用 AI 協助創作新內容</p>
+                  <button @click="$emit('navigate', 'create-article')" 
+                          style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                    開始創作
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `,
+        emits: ["navigate"],
+        mounted() {
+          this.$emit("page-loaded");
+        },
+      };
+
+      // 主應用程式
+      createApp({
+        components: {
+          DashboardPage,
+        },
+        data() {
+          return {
+            currentPage: "dashboard",
+            pageLoading: false,
+            sidebarOpen: false,
+            loadedComponents: {},
+          };
+        },
+        computed: {
+          pageTitle() {
+            const titles = {
+              dashboard: "控制台",
+              "create-article": "新增文章",
+              "manage-articles": "文章管理",
+            };
+            return titles[this.currentPage] || "部落格管理";
+          },
+          breadcrumb() {
+            const breadcrumbs = {
+              dashboard: "首頁 / 控制台",
+              "create-article": "首頁 / 新增文章",
+              "manage-articles": "首頁 / 文章管理",
+            };
+            return breadcrumbs[this.currentPage] || "";
+          },
+          currentPageComponent() {
+            if (this.currentPage === "dashboard") {
+              return "DashboardPage";
+            }
+            return this.loadedComponents[this.currentPage] || "div";
+          },
+        },
+        methods: {
+          async navigateTo(page) {
+            if (page === this.currentPage) return;
+
+            this.pageLoading = true;
+            this.currentPage = page;
+
+            // 動態載入頁面組件
+            if (page !== "dashboard" && !this.loadedComponents[page]) {
+              try {
+                await this.loadPageComponent(page);
+              } catch (error) {
+                console.error("載入頁面失敗:", error);
+              }
+            }
+
+            // 關閉手機版側邊欄
+            this.sidebarOpen = false;
+          },
+
+          async loadPageComponent(page) {
+            const pageFiles = {
+              "create-article": "create-article.html",
+              "manage-articles": "manage-articles.html",
+            };
+
+            const fileName = pageFiles[page];
+            if (!fileName) return;
+
+            try {
+              const response = await fetch(`/admin/${fileName}`);
+              if (!response.ok) {
+                throw new Error(`Failed to load ${fileName}`);
+              }
+
+              const html = await response.text();
+              const componentMatch = html.match(
+                /<script id="page-component">([\s\S]*?)<\/script>/
+              );
+
+              if (componentMatch) {
+                const componentCode = componentMatch[1];
+                const component = eval(`(${componentCode})`);
+                this.loadedComponents[page] = component;
+              }
+            } catch (error) {
+              console.error(`載入 ${page} 頁面失敗:`, error);
+              // 載入失敗時顯示錯誤頁面
+              this.loadedComponents[page] = {
+                template: `<div style="text-align: center; padding: 40px; color: #dc3545;">
+                  <h3>頁面載入失敗</h3>
+                  <p>無法載入 ${page} 頁面，請檢查檔案是否存在。</p>
+                  <button @click="$emit('navigate', 'dashboard')" 
+                          style="background: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                    返回控制台
+                  </button>
+                </div>`,
+                emits: ["navigate"],
+                mounted() {
+                  this.$emit("page-loaded");
+                },
+              };
+            }
+          },
+
+          toggleSidebar() {
+            this.sidebarOpen = !this.sidebarOpen;
+          },
+
+          onPageLoaded() {
+            this.pageLoading = false;
+          },
+        },
+
+        async mounted() {
+          // 根據 URL hash 決定初始頁面
+          const hash = window.location.hash.slice(1);
+          if (
+            hash &&
+            ["dashboard", "create-article", "manage-articles"].includes(hash)
+          ) {
+            await this.navigateTo(hash);
+          } else {
+            this.onPageLoaded();
+          }
+
+          // 監聽瀏覽器返回/前進
+          window.addEventListener("hashchange", () => {
+            const newHash = window.location.hash.slice(1);
+            if (newHash && newHash !== this.currentPage) {
+              this.navigateTo(newHash);
+            }
+          });
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

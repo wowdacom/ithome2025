@@ -95,13 +95,22 @@ describe('ArticleForm', () => {
     await wrapper.find('input[name="category"]').setValue('Test Category')
     await wrapper.find('textarea[name="content"]').setValue('Test Content')
 
-    // Click reset button
-    await wrapper.find('button[type="button"]').trigger('click')
+    // Click reset button (specifically the one with text 清除)
+    const resetBtn = wrapper.findAll('button').find(b => b.text().includes('清除'))!
+    await resetBtn.trigger('click')
 
     // Check form is reset
     expect(wrapper.find('input[name="title"]').element.value).toBe('')
     expect(wrapper.find('input[name="category"]').element.value).toBe('')
     expect(wrapper.find('textarea[name="content"]').element.value).toBe('')
+  })
+
+  it('should render AI 建議 button (AI assist feature)', () => {
+    // Red: 初始實作中還沒有 AI 建議按鈕，這個測試會失敗，驅動實作
+    const wrapper = mount(ArticleForm)
+    const aiBtn = wrapper.find('button.ai-assist')
+    expect(aiBtn.exists()).toBe(true)
+    expect(aiBtn.text()).toContain('AI')
   })
 
   it('should disable submit button when loading', async () => {

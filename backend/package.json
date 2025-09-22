@@ -9,6 +9,7 @@
     "start": "node dist/src/presentation/http/server.js",
     "test": "vitest",
     "test:supabase": "vitest run tests/supabase.integration.spec.ts",
+    "test:openai": "tsx scripts/testOpenAI.ts",
     "check:supabase": "tsx scripts/checkSupabase.ts",
     "add:article": "tsx scripts/addArticle.ts",
     "list:articles": "tsx scripts/listArticles.ts"
@@ -20,7 +21,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "openai": "^5.22.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

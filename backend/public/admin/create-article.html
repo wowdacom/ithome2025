@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>新增文章</title>
+  </head>
+  <body>
+    <!-- 此檔案只用於存放 Vue 組件，實際由主頁面動態載入 -->
+
+    <script id="page-component">
+      ({
+        template: `
+      <div class="create-article-page">
+        <div class="page-header">
+          <h3>新增文章</h3>
+          <p class="page-description">創建和管理您的文章內容</p>
+        </div>
+
+        <!-- 訊息提示 -->
+        <div v-if="message.text" :class="['message', message.type]">
+          {{ message.text }}
+        </div>
+
+        <div class="article-form-container">
+          <form @submit.prevent="handleSubmit" class="article-form">
+            <!-- 基本資訊區塊 -->
+            <div class="form-section">
+              <h4 class="section-title">基本資訊</h4>
+              
+              <div class="form-group">
+                <label for="title" class="form-label">
+                  <span class="label-text">文章標題</span>
+                  <span class="label-required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="title" 
+                  v-model="form.title" 
+                  class="form-input"
+                  placeholder="請輸入文章標題"
+                  required 
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="category" class="form-label">
+                  <span class="label-text">文章分類</span>
+                  <span class="label-required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="category" 
+                  v-model="form.category" 
+                  class="form-input"
+                  placeholder="例如：技術分享、生活隨筆、教學文章"
+                  required 
+                />
+              </div>
+            </div>
+
+            <!-- 內容編輯區塊 -->
+            <div class="form-section">
+              <h4 class="section-title">文章內容</h4>
+              
+              <div class="form-group">
+                <label for="content" class="form-label">
+                  <span class="label-text">文章內容</span>
+                  <span class="label-required">*</span>
+                </label>
+                <div class="content-editor">
+                  <textarea 
+                    id="content" 
+                    v-model="form.content" 
+                    class="form-textarea"
+                    placeholder="開始寫作，或使用下方的 AI 協助功能..."
+                    required
+                  ></textarea>
+                  
+                  <!-- AI 協助按鈕 -->
+                  <div class="editor-toolbar">
+                    <button 
+                      type="button" 
+                      @click="toggleAiPanel" 
+                      class="ai-assist-btn"
+                      :disabled="loading || aiPanel.loading"
+                    >
+                      AI 寫作協助
+                    </button>
+                    <div class="content-stats">
+                      字數: {{ form.content.length }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI 協助面板 -->
+              <transition name="slide-down">
+                <div v-if="aiPanel.show" class="ai-panel">
+                  <div class="ai-panel-header">
+                    <h5>AI 寫作助手</h5>
+                    <button type="button" @click="toggleAiPanel" class="close-btn">×</button>
+                  </div>
+                  
+                  <div class="ai-prompt-section">
+                    <div class="prompt-examples">
+                      <p class="prompt-label">建議提示詞：</p>
+                      <div class="example-tags">
+                        <button 
+                          type="button" 
+                          class="example-tag"
+                          @click="setPrompt('幫我寫一篇關於 ' + form.category + ' 的技術文章')"
+                          v-if="form.category"
+                        >
+                          寫一篇{{ form.category }}文章
+                        </button>
+                        <button 
+                          type="button" 
+                          class="example-tag"
+                          @click="setPrompt('為我的文章寫一個吸引人的開頭')"
+                        >
+                          文章開頭
+                        </button>
+                        <button 
+                          type="button" 
+                          class="example-tag"
+                          @click="setPrompt('幫我擴展這個內容，讓它更豐富')"
+                        >
+                          擴展內容
+                        </button>
+                        <button 
+                          type="button" 
+                          class="example-tag"
+                          @click="setPrompt('改善文章的結構和流暢度')"
+                        >
+                          改善結構
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="ai-prompt-input">
+                      <textarea
+                        v-model="aiPanel.prompt" 
+                        placeholder="告訴 AI 您的需求，例如：幫我寫一篇關於 React 的技術教學..."
+                        class="prompt-textarea"
+                        @keydown.ctrl.enter="handleAiAssist"
+                      ></textarea>
+                      <button 
+                        type="button" 
+                        @click="handleAiAssist" 
+                        class="ai-generate-btn"
+                        :disabled="!aiPanel.prompt.trim() || aiPanel.loading"
+                      >
+                        <span v-if="aiPanel.loading" class="loading-spinner"></span>
+                        {{ aiPanel.loading ? '生成中...' : '生成內容' }}
+                        <span class="shortcut-hint">Ctrl + Enter</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- AI 結果顯示 -->
+                  <div v-if="aiPanel.result" class="ai-result-section">
+                    <div class="result-header">
+                      <h6>AI 生成結果</h6>
+                      <div class="result-actions">
+                        <button type="button" @click="applyAiResult" class="action-btn primary">
+                          套用到內容
+                        </button>
+                        <button type="button" @click="appendAiResult" class="action-btn secondary">
+                          附加到內容
+                        </button>
+                        <button type="button" @click="clearAiResult" class="action-btn tertiary">
+                          清除
+                        </button>
+                      </div>
+                    </div>
+                    <div class="ai-result">
+                      {{ aiPanel.result }}
+                    </div>
+                  </div>
+                </div>
+              </transition>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="form-actions">
+              <button type="submit" class="submit-btn" :disabled="loading">
+                <span v-if="loading" class="loading-spinner"></span>
+                {{ loading ? '發布中...' : '發布文章' }}
+              </button>
+              <button type="button" @click="resetForm" class="reset-btn">
+                清除重寫
+              </button>
+              <button type="button" @click="saveDraft" class="draft-btn">
+                存為草稿
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `,
+
+        data() {
+          return {
+            loading: false,
+            form: {
+              title: "",
+              category: "",
+              content: "",
+            },
+            aiPanel: {
+              show: false,
+              loading: false,
+              prompt: "",
+              result: "",
+            },
+            message: {
+              text: "",
+              type: "",
+            },
+          };
+        },
+
+        methods: {
+          async handleSubmit() {
+            try {
+              this.loading = true;
+              this.clearMessage();
+
+              const response = await fetch("/api/articles", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(this.form),
+              });
+
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || response.statusText);
+              }
+
+              this.showMessage("文章發布成功！", "success");
+              this.resetForm();
+            } catch (error) {
+              this.showMessage("❌ 發布失敗: " + error.message, "error");
+              console.error("發布文章錯誤:", error);
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          resetForm() {
+            this.form = {
+              title: "",
+              category: "",
+              content: "",
+            };
+            this.aiPanel = {
+              show: false,
+              loading: false,
+              prompt: "",
+              result: "",
+            };
+            this.clearMessage();
+          },
+
+          saveDraft() {
+            const draft = {
+              ...this.form,
+              timestamp: new Date().toISOString(),
+            };
+            localStorage.setItem("article_draft", JSON.stringify(draft));
+            this.showMessage("草稿已保存", "success");
+          },
+
+          loadDraft() {
+            const draft = localStorage.getItem("article_draft");
+            if (draft) {
+              const draftData = JSON.parse(draft);
+              this.form = {
+                title: draftData.title || "",
+                category: draftData.category || "",
+                content: draftData.content || "",
+              };
+              this.showMessage("已載入草稿", "success");
+            }
+          },
+
+          toggleAiPanel() {
+            this.aiPanel.show = !this.aiPanel.show;
+            if (!this.aiPanel.show) {
+              this.clearAiResult();
+            }
+          },
+
+          setPrompt(promptText) {
+            this.aiPanel.prompt = promptText;
+          },
+
+          async handleAiAssist() {
+            if (!this.aiPanel.prompt.trim()) return;
+
+            try {
+              this.aiPanel.loading = true;
+
+              const requestBody = {
+                prompt: this.aiPanel.prompt,
+                articleContent: this.form.content || undefined,
+              };
+
+              const response = await fetch("/api/ai/assist", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+              });
+
+              if (!response.ok) {
+                throw new Error("AI 協助失敗: " + response.status);
+              }
+
+              const result = await response.json();
+              this.aiPanel.result =
+                result.improvedContent || result.content || "無法獲得 AI 回應";
+            } catch (error) {
+              console.error("AI 協助錯誤:", error);
+              this.aiPanel.result = "錯誤: " + error.message;
+            } finally {
+              this.aiPanel.loading = false;
+            }
+          },
+
+          applyAiResult() {
+            this.form.content = this.aiPanel.result;
+            this.clearAiResult();
+          },
+
+          appendAiResult() {
+            this.form.content = this.form.content
+              ? this.form.content + "\\n\\n" + this.aiPanel.result
+              : this.aiPanel.result;
+            this.clearAiResult();
+          },
+
+          clearAiResult() {
+            this.aiPanel.result = "";
+            this.aiPanel.prompt = "";
+          },
+
+          showMessage(text, type = "success") {
+            this.message = { text, type };
+            setTimeout(
+              () => {
+                this.clearMessage();
+              },
+              type === "error" ? 5000 : 3000
+            );
+          },
+
+          clearMessage() {
+            this.message = { text: "", type: "" };
+          },
+        },
+
+        mounted() {
+          this.$emit("page-loaded");
+
+          if (localStorage.getItem("article_draft")) {
+            if (confirm("發現未完成的草稿，是否要載入？")) {
+              this.loadDraft();
+            }
+          }
+        },
+
+        emits: ["page-loaded"],
+      });
+    </script>
+
+    <style>
+      .create-article-page {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      .page-header {
+        margin-bottom: 30px;
+        text-align: left;
+        border-bottom: 1px solid #e1e5e9;
+        padding-bottom: 20px;
+      }
+
+      .page-header h3 {
+        color: #1a1a1a;
+        font-size: 1.8em;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .page-description {
+        color: #666;
+        font-size: 1em;
+        margin: 0;
+      }
+
+      .message {
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      .message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .article-form-container {
+        background: #ffffff;
+        border: 1px solid #e1e5e9;
+        border-radius: 8px;
+        padding: 40px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      }
+
+      .form-section {
+        margin-bottom: 40px;
+        background: #ffffff;
+        border: 1px solid #e1e5e9;
+        border-radius: 6px;
+        padding: 30px;
+      }
+
+      .section-title {
+        color: #1a1a1a;
+        font-size: 1.2em;
+        font-weight: 600;
+        margin-bottom: 24px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e1e5e9;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #1a1a1a;
+        font-size: 0.95em;
+      }
+
+      .label-required {
+        color: #dc3545;
+        margin-left: 4px;
+      }
+
+      .form-input,
+      .form-textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 0.95em;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        font-family: inherit;
+        background-color: #ffffff;
+      }
+
+      .form-input:focus,
+      .form-textarea:focus {
+        outline: none;
+        border-color: #0066cc;
+        box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+      }
+
+      .form-textarea {
+        min-height: 200px;
+        resize: vertical;
+        line-height: 1.6;
+      }
+
+      .content-editor {
+        position: relative;
+      }
+
+      .editor-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      .content-stats {
+        color: #7f8c8d;
+        font-size: 0.9em;
+      }
+
+      .ai-assist-btn {
+        background: #0066cc;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.9em;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .ai-assist-btn:hover:not(:disabled) {
+        background: #0052a3;
+      }
+
+      .ai-assist-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      .ai-panel {
+        background: #f8f9fa;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 24px;
+        margin-top: 16px;
+      }
+
+      .ai-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e1e5e9;
+      }
+
+      .ai-panel-header h5 {
+        margin: 0;
+        color: #1a1a1a;
+        font-size: 1.1em;
+        font-weight: 600;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+        color: #95a5a6;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+      }
+
+      .close-btn:hover {
+        background: #ecf0f1;
+        color: #e74c3c;
+      }
+
+      .prompt-examples {
+        margin-bottom: 15px;
+      }
+
+      .prompt-label {
+        color: #666;
+        margin-bottom: 10px;
+        font-size: 0.9em;
+        font-weight: 500;
+      }
+
+      .example-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .example-tag {
+        background: #e9ecef;
+        border: 1px solid #d1d5db;
+        padding: 6px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.85em;
+        transition: all 0.2s ease;
+        color: #495057;
+      }
+
+      .example-tag:hover {
+        background: #0066cc;
+        color: white;
+        border-color: #0066cc;
+      }
+
+      .ai-prompt-input {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .prompt-textarea {
+        flex: 1;
+        min-height: 80px;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        resize: vertical;
+        font-family: inherit;
+      }
+
+      .ai-generate-btn {
+        background: #0066cc;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        white-space: nowrap;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-height: 80px;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+      }
+
+      .ai-generate-btn:hover:not(:disabled) {
+        background: #0052a3;
+      }
+
+      .shortcut-hint {
+        font-size: 0.75em;
+        opacity: 0.8;
+      }
+
+      .ai-result-section {
+        margin-top: 20px;
+        border-top: 1px solid #ecf0f1;
+        padding-top: 20px;
+      }
+
+      .result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .result-header h6 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 1.1em;
+      }
+
+      .result-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .action-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .action-btn.primary {
+        background: #27ae60;
+        color: white;
+      }
+
+      .action-btn.secondary {
+        background: #3498db;
+        color: white;
+      }
+
+      .action-btn.tertiary {
+        background: #95a5a6;
+        color: white;
+      }
+
+      .action-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      .ai-result {
+        background: white;
+        border: 1px solid #ecf0f1;
+        border-radius: 6px;
+        padding: 16px;
+        white-space: pre-wrap;
+        line-height: 1.6;
+        max-height: 300px;
+        overflow-y: auto;
+        font-family: inherit;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        padding-top: 20px;
+        border-top: 1px solid #ecf0f1;
+      }
+
+      .submit-btn,
+      .reset-btn,
+      .draft-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.95em;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .submit-btn {
+        background: #0066cc;
+        color: white;
+      }
+
+      .submit-btn:hover:not(:disabled) {
+        background: #0052a3;
+      }
+
+      .reset-btn {
+        background: #6c757d;
+        color: white;
+      }
+
+      .reset-btn:hover {
+        background: #5a6268;
+      }
+
+      .draft-btn {
+        background: #28a745;
+        color: white;
+      }
+
+      .draft-btn:hover {
+        background: #218838;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .slide-down-enter-active,
+      .slide-down-leave-active {
+        transition: all 0.3s ease;
+      }
+
+      .slide-down-enter-from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      .slide-down-leave-to {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      @media (max-width: 768px) {
+        .article-form-container {
+          padding: 20px;
+        }
+
+        .form-section {
+          padding: 20px;
+        }
+
+        .ai-prompt-input {
+          flex-direction: column;
+        }
+
+        .ai-generate-btn {
+          min-height: 50px;
+          width: 100%;
+        }
+
+        .form-actions {
+          flex-direction: column;
+        }
+
+        .result-actions {
+          flex-direction: column;
+          gap: 8px;
+        }
+      }
+    </style>
+  </body>
+</html>

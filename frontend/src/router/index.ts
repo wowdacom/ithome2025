@@ -28,7 +28,20 @@ const router = createRouter({
     {
       path: '/admin',
       name: 'Admin',
-      component: () => import('../views/admin/AdminApp.vue')
+      component: () => import('../views/admin/AdminApp.vue'),
+      redirect: '/admin/articles',
+      children: [
+        {
+          path: 'create-article',
+          name: 'CreateArticle',
+          component: () => import('../views/admin/CreateArticle.vue')
+        },
+        {
+          path: 'articles',
+          name: 'AdminArticles',
+          component: () => import('../views/admin/ArticleManagement.vue')
+        }
+      ]
     }
   ],
 })

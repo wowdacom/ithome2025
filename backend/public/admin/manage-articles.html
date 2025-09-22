@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <title>文章管理</title>
+  </head>
+  <body>
+    <!-- 此檔案只用於存放 Vue 組件，實際由主頁面動態載入 -->
+
+    <script id="page-component">
+      ({
+        template: `
+      <div class="manage-articles-page">
+        <div class="page-header">
+          <h3>文章管理</h3>
+          <p class="page-description">搜尋、瀏覽和管理您的所有文章內容</p>
+        </div>
+
+        <!-- 訊息提示 -->
+        <div v-if="message.text" :class="['message', message.type]">
+          {{ message.text }}
+        </div>
+
+        <!-- 搜尋和過濾區 -->
+        <div class="search-section">
+          <div class="search-bar">
+            <div class="search-input-group">
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                @input="handleSearch"
+                placeholder="搜尋文章標題、內容或分類..."
+                class="search-input"
+              />
+              <button 
+                @click="clearSearch" 
+                v-if="searchQuery"
+                class="clear-search-btn"
+                title="清除搜尋"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div class="filter-controls">
+              <select v-model="selectedCategory" @change="handleFilter" class="category-filter">
+                <option value="">所有分類</option>
+                <option v-for="category in categories" :key="category" :value="category">
+                  {{ category }}
+                </option>
+              </select>
+              
+              <select v-model="sortBy" @change="handleSort" class="sort-filter">
+                <option value="date-desc">最新優先</option>
+                <option value="date-asc">最舊優先</option>
+                <option value="title-asc">標題 A-Z</option>
+                <option value="title-desc">標題 Z-A</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="search-stats" v-if="searchQuery || selectedCategory">
+            找到 {{ filteredArticles.length }} 篇文章
+            <span v-if="searchQuery">包含「{{ searchQuery }}」</span>
+            <span v-if="selectedCategory">在「{{ selectedCategory }}」分類中</span>
+          </div>
+        </div>
+
+        <!-- 文章列表 -->
+        <div class="articles-container">
+          <!-- 載入中狀態 -->
+          <div v-if="loading" class="loading-state">
+            <div class="loading-spinner large"></div>
+            <p>載入文章中...</p>
+          </div>
+          
+          <!-- 空狀態 -->
+          <div v-else-if="filteredArticles.length === 0" class="empty-state">
+            <div class="empty-icon">📝</div>
+            <h4>{{ searchQuery || selectedCategory ? '沒有找到相關文章' : '還沒有任何文章' }}</h4>
+            <p>{{ searchQuery || selectedCategory ? '試試其他搜尋關鍵字或清除過濾條件' : '點擊「新增文章」來創建您的第一篇文章' }}</p>
+            <button v-if="!searchQuery && !selectedCategory" @click="$emit('navigate', 'create-article')" class="create-first-btn">
+              立即新增文章
+            </button>
+          </div>
+          
+          <!-- 文章卡片列表 -->
+          <div v-else class="articles-grid">
+            <div 
+              v-for="article in paginatedArticles" 
+              :key="article.id"
+              class="article-card"
+            >
+              <div class="card-header">
+                <h5 class="article-title">{{ article.title }}</h5>
+                <span class="article-category">{{ article.category }}</span>
+              </div>
+              
+              <div class="card-content">
+                <p class="article-preview">
+                  {{ getPreview(article.content) }}
+                </p>
+                
+                <div class="article-meta">
+                  <span class="article-date">
+                    {{ formatDate(article.createdAt) }}
+                  </span>
+                  <span class="article-length">
+                    {{ article.content.length }} 字
+                  </span>
+                </div>
+              </div>
+              
+              <div class="card-actions">
+                <button @click="editArticle(article)" class="action-btn edit">
+                  編輯
+                </button>
+                <button @click="viewArticle(article)" class="action-btn view">
+                  預覽
+                </button>
+                <button @click="confirmDelete(article)" class="action-btn delete">
+                  刪除
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 分頁控制 -->
+          <div v-if="totalPages > 1" class="pagination">
+            <button 
+              @click="currentPage = 1" 
+              :disabled="currentPage === 1"
+              class="page-btn"
+            >
+              首頁
+            </button>
+            <button 
+              @click="currentPage--" 
+              :disabled="currentPage === 1"
+              class="page-btn"
+            >
+              上一頁
+            </button>
+            
+            <span class="page-info">
+              第 {{ currentPage }} 頁，共 {{ totalPages }} 頁
+            </span>
+            
+            <button 
+              @click="currentPage++" 
+              :disabled="currentPage === totalPages"
+              class="page-btn"
+            >
+              下一頁
+            </button>
+            <button 
+              @click="currentPage = totalPages" 
+              :disabled="currentPage === totalPages"
+              class="page-btn"
+            >
+              末頁
+            </button>
+          </div>
+        </div>
+
+        <!-- 編輯文章模態框 -->
+        <div v-if="editingArticle" class="modal-overlay" @click="closeEditModal">
+          <div class="modal-content" @click.stop>
+            <div class="modal-header">
+              <h4>編輯文章</h4>
+              <button @click="closeEditModal" class="modal-close">×</button>
+            </div>
+            
+            <form @submit.prevent="updateArticle" class="edit-form">
+              <div class="form-group">
+                <label>文章標題</label>
+                <input 
+                  type="text" 
+                  v-model="editForm.title" 
+                  class="form-input"
+                  required
+                />
+              </div>
+              
+              <div class="form-group">
+                <label>分類</label>
+                <input 
+                  type="text" 
+                  v-model="editForm.category" 
+                  class="form-input"
+                  required
+                />
+              </div>
+              
+              <div class="form-group">
+                <label>內容</label>
+                <textarea 
+                  v-model="editForm.content" 
+                  class="form-textarea"
+                  rows="15"
+                  required
+                ></textarea>
+              </div>
+              
+              <div class="modal-actions">
+                <button type="submit" class="btn primary" :disabled="updating">
+                  <span v-if="updating" class="loading-spinner"></span>
+                  {{ updating ? '更新中...' : '儲存變更' }}
+                </button>
+                <button type="button" @click="closeEditModal" class="btn secondary">
+                  取消
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- 預覽文章模態框 -->
+        <div v-if="previewArticle" class="modal-overlay" @click="closePreviewModal">
+          <div class="modal-content preview-modal" @click.stop>
+            <div class="modal-header">
+              <h4>文章預覽</h4>
+              <button @click="closePreviewModal" class="modal-close">×</button>
+            </div>
+            
+            <div class="preview-content">
+              <h1 class="preview-title">{{ previewArticle.title }}</h1>
+              <div class="preview-meta">
+                <span class="preview-category">{{ previewArticle.category }}</span>
+                <span class="preview-date">{{ formatDate(previewArticle.createdAt) }}</span>
+              </div>
+              <div class="preview-text">{{ previewArticle.content }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 刪除確認模態框 -->
+        <div v-if="deleteConfirm.show" class="modal-overlay" @click="closeDeleteModal">
+          <div class="modal-content delete-modal" @click.stop>
+            <div class="modal-header">
+              <h4>確認刪除</h4>
+              <button @click="closeDeleteModal" class="modal-close">×</button>
+            </div>
+            
+            <div class="delete-content">
+              <p>您確定要刪除這篇文章嗎？</p>
+              <div class="delete-article-info">
+                <strong>{{ deleteConfirm.article?.title }}</strong>
+                <small>此操作無法復原</small>
+              </div>
+            </div>
+            
+            <div class="modal-actions">
+              <button @click="deleteArticle" class="btn danger" :disabled="deleting">
+                <span v-if="deleting" class="loading-spinner"></span>
+                {{ deleting ? '刪除中...' : '確認刪除' }}
+              </button>
+              <button @click="closeDeleteModal" class="btn secondary">
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+
+        data() {
+          return {
+            loading: false,
+            updating: false,
+            deleting: false,
+            articles: [],
+            searchQuery: "",
+            selectedCategory: "",
+            sortBy: "date-desc",
+            currentPage: 1,
+            itemsPerPage: 6,
+            editingArticle: null,
+            previewArticle: null,
+            deleteConfirm: {
+              show: false,
+              article: null,
+            },
+            editForm: {
+              title: "",
+              category: "",
+              content: "",
+            },
+            message: {
+              text: "",
+              type: "",
+            },
+          };
+        },
+
+        computed: {
+          categories() {
+            const cats = new Set(
+              this.articles.map((article) => article.category)
+            );
+            return Array.from(cats).sort();
+          },
+
+          filteredArticles() {
+            let filtered = [...this.articles];
+
+            // 搜尋過濾
+            if (this.searchQuery) {
+              const query = this.searchQuery.toLowerCase();
+              filtered = filtered.filter(
+                (article) =>
+                  article.title.toLowerCase().includes(query) ||
+                  article.content.toLowerCase().includes(query) ||
+                  article.category.toLowerCase().includes(query)
+              );
+            }
+
+            // 分類過濾
+            if (this.selectedCategory) {
+              filtered = filtered.filter(
+                (article) => article.category === this.selectedCategory
+              );
+            }
+
+            // 排序
+            filtered.sort((a, b) => {
+              switch (this.sortBy) {
+                case "date-desc":
+                  return new Date(b.createdAt) - new Date(a.createdAt);
+                case "date-asc":
+                  return new Date(a.createdAt) - new Date(b.createdAt);
+                case "title-asc":
+                  return a.title.localeCompare(b.title);
+                case "title-desc":
+                  return b.title.localeCompare(a.title);
+                default:
+                  return 0;
+              }
+            });
+
+            return filtered;
+          },
+
+          totalPages() {
+            return Math.ceil(this.filteredArticles.length / this.itemsPerPage);
+          },
+
+          paginatedArticles() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.filteredArticles.slice(start, end);
+          },
+        },
+
+        methods: {
+          async fetchArticles() {
+            try {
+              this.loading = true;
+
+              const response = await fetch("/api/articles");
+              if (!response.ok) {
+                throw new Error("載入文章失敗");
+              }
+
+              this.articles = await response.json();
+            } catch (error) {
+              this.showMessage("❌ 載入文章失敗: " + error.message, "error");
+              console.error("載入文章錯誤:", error);
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          handleSearch() {
+            this.currentPage = 1; // 重置到第一頁
+          },
+
+          handleFilter() {
+            this.currentPage = 1; // 重置到第一頁
+          },
+
+          handleSort() {
+            this.currentPage = 1; // 重置到第一頁
+          },
+
+          clearSearch() {
+            this.searchQuery = "";
+            this.selectedCategory = "";
+            this.currentPage = 1;
+          },
+
+          getPreview(content) {
+            return content.length > 150
+              ? content.substring(0, 150) + "..."
+              : content;
+          },
+
+          formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString("zh-TW", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          },
+
+          editArticle(article) {
+            this.editingArticle = article;
+            this.editForm = {
+              title: article.title,
+              category: article.category,
+              content: article.content,
+            };
+          },
+
+          closeEditModal() {
+            this.editingArticle = null;
+            this.editForm = {
+              title: "",
+              category: "",
+              content: "",
+            };
+          },
+
+          async updateArticle() {
+            try {
+              this.updating = true;
+
+              const response = await fetch(
+                "/api/articles/" + this.editingArticle.id,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(this.editForm),
+                }
+              );
+
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || response.statusText);
+              }
+
+              // 更新本地數據
+              const index = this.articles.findIndex(
+                (a) => a.id === this.editingArticle.id
+              );
+              if (index !== -1) {
+                this.articles[index] = {
+                  ...this.articles[index],
+                  ...this.editForm,
+                  updatedAt: new Date().toISOString(),
+                };
+              }
+
+              this.showMessage("文章更新成功！", "success");
+              this.closeEditModal();
+            } catch (error) {
+              this.showMessage("❌ 更新失敗: " + error.message, "error");
+              console.error("更新文章錯誤:", error);
+            } finally {
+              this.updating = false;
+            }
+          },
+
+          viewArticle(article) {
+            this.previewArticle = article;
+          },
+
+          closePreviewModal() {
+            this.previewArticle = null;
+          },
+
+          confirmDelete(article) {
+            this.deleteConfirm = {
+              show: true,
+              article,
+            };
+          },
+
+          closeDeleteModal() {
+            this.deleteConfirm = {
+              show: false,
+              article: null,
+            };
+          },
+
+          async deleteArticle() {
+            try {
+              this.deleting = true;
+
+              const response = await fetch(
+                "/api/articles/" + this.deleteConfirm.article.id,
+                {
+                  method: "DELETE",
+                }
+              );
+
+              if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || response.statusText);
+              }
+
+              // 從本地數據中移除
+              this.articles = this.articles.filter(
+                (a) => a.id !== this.deleteConfirm.article.id
+              );
+
+              this.showMessage("文章已刪除", "success");
+              this.closeDeleteModal();
+
+              // 調整當前頁面如果需要
+              if (this.paginatedArticles.length === 0 && this.currentPage > 1) {
+                this.currentPage--;
+              }
+            } catch (error) {
+              this.showMessage("❌ 刪除失敗: " + error.message, "error");
+              console.error("刪除文章錯誤:", error);
+            } finally {
+              this.deleting = false;
+            }
+          },
+
+          showMessage(text, type = "success") {
+            this.message = { text, type };
+            setTimeout(
+              () => {
+                this.clearMessage();
+              },
+              type === "error" ? 5000 : 3000
+            );
+          },
+
+          clearMessage() {
+            this.message = { text: "", type: "" };
+          },
+        },
+
+        mounted() {
+          this.$emit("page-loaded");
+          this.fetchArticles();
+        },
+
+        emits: ["page-loaded", "navigate"],
+      });
+    </script>
+
+    <style>
+      .manage-articles-page {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .page-header {
+        margin-bottom: 30px;
+        text-align: left;
+        border-bottom: 1px solid #e1e5e9;
+        padding-bottom: 20px;
+      }
+
+      .page-header h3 {
+        color: #1a1a1a;
+        font-size: 1.8em;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+
+      .page-description {
+        color: #666;
+        font-size: 1em;
+        margin: 0;
+      }
+
+      .message {
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      .message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .search-section {
+        background: white;
+        border: 1px solid #e1e5e9;
+        border-radius: 6px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      }
+
+      .search-bar {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        margin-bottom: 15px;
+      }
+
+      .search-input-group {
+        flex: 1;
+        position: relative;
+      }
+
+      .search-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 0.95em;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .search-input:focus {
+        outline: none;
+        border-color: #0066cc;
+        box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+      }
+
+      .clear-search-btn {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #95a5a6;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .clear-search-btn:hover {
+        background: #7f8c8d;
+      }
+
+      .filter-controls {
+        display: flex;
+        gap: 12px;
+      }
+
+      .category-filter,
+      .sort-filter {
+        padding: 12px;
+        border: 2px solid #ecf0f1;
+        border-radius: 8px;
+        background: white;
+        font-size: 0.9em;
+        cursor: pointer;
+        min-width: 150px;
+      }
+
+      .search-stats {
+        color: #7f8c8d;
+        font-style: italic;
+      }
+
+      .articles-container {
+        background: white;
+        border: 1px solid #e1e5e9;
+        border-radius: 6px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      }
+
+      .loading-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #7f8c8d;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      .loading-spinner.large {
+        width: 40px;
+        height: 40px;
+        border-width: 4px;
+        margin-bottom: 15px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #7f8c8d;
+      }
+
+      .empty-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+      }
+
+      .create-first-btn {
+        background: #0066cc;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        margin-top: 20px;
+        transition: background-color 0.2s ease;
+      }
+
+      .create-first-btn:hover {
+        background: #0052a3;
+      }
+
+      .articles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .article-card {
+        background: #f8f9fa;
+        border: 1px solid #e1e5e9;
+        border-radius: 6px;
+        padding: 20px;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .article-card:hover {
+        border-color: #0066cc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+      }
+
+      .article-title {
+        color: #1a1a1a;
+        font-size: 1.1em;
+        font-weight: 600;
+        margin: 0;
+        flex: 1;
+        margin-right: 10px;
+        line-height: 1.3;
+      }
+
+      .article-category {
+        background: #0066cc;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        white-space: nowrap;
+      }
+
+      .card-content {
+        flex: 1;
+        margin-bottom: 15px;
+      }
+
+      .article-preview {
+        color: #5a6c7d;
+        line-height: 1.5;
+        margin-bottom: 15px;
+      }
+
+      .article-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85em;
+        color: #7f8c8d;
+      }
+
+      .card-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .action-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+      }
+
+      .action-btn.edit {
+        background: #28a745;
+        color: white;
+      }
+
+      .action-btn.edit:hover {
+        background: #218838;
+      }
+
+      .action-btn.view {
+        background: #0066cc;
+        color: white;
+      }
+
+      .action-btn.view:hover {
+        background: #0052a3;
+      }
+
+      .action-btn.delete {
+        background: #dc3545;
+        color: white;
+      }
+
+      .action-btn.delete:hover {
+        background: #c82333;
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        padding-top: 20px;
+        border-top: 1px solid #ecf0f1;
+      }
+
+      .page-btn {
+        padding: 8px 12px;
+        border: 1px solid #dee2e6;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .page-btn:hover:not(:disabled) {
+        background: #3498db;
+        color: white;
+        border-color: #3498db;
+      }
+
+      .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .page-info {
+        color: #7f8c8d;
+        font-weight: 500;
+      }
+
+      /* 模態框樣式 */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .preview-modal {
+        max-width: 800px;
+      }
+
+      .delete-modal {
+        max-width: 400px;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 20px 15px;
+        border-bottom: 1px solid #ecf0f1;
+      }
+
+      .modal-header h4 {
+        margin: 0;
+        color: #2c3e50;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #95a5a6;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+      }
+
+      .modal-close:hover {
+        background: #ecf0f1;
+        color: #e74c3c;
+      }
+
+      .edit-form {
+        padding: 20px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #34495e;
+      }
+
+      .form-input,
+      .form-textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #ecf0f1;
+        border-radius: 6px;
+        font-size: 1em;
+        transition: border-color 0.3s ease;
+        font-family: inherit;
+      }
+
+      .form-input:focus,
+      .form-textarea:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+      }
+
+      .form-textarea {
+        resize: vertical;
+        line-height: 1.6;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        padding-top: 20px;
+        border-top: 1px solid #ecf0f1;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn.primary {
+        background: #27ae60;
+        color: white;
+      }
+
+      .btn.secondary {
+        background: #95a5a6;
+        color: white;
+      }
+
+      .btn.danger {
+        background: #e74c3c;
+        color: white;
+      }
+
+      .btn:hover:not(:disabled) {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .preview-content {
+        padding: 20px;
+      }
+
+      .preview-title {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        line-height: 1.3;
+      }
+
+      .preview-meta {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #ecf0f1;
+      }
+
+      .preview-category {
+        background: #3498db;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.9em;
+      }
+
+      .preview-date {
+        color: #7f8c8d;
+        font-size: 0.9em;
+      }
+
+      .preview-text {
+        line-height: 1.8;
+        color: #2c3e50;
+        white-space: pre-wrap;
+      }
+
+      .delete-content {
+        padding: 20px;
+        text-align: center;
+      }
+
+      .delete-article-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+
+      .delete-article-info strong {
+        display: block;
+        color: #2c3e50;
+        margin-bottom: 5px;
+      }
+
+      .delete-article-info small {
+        color: #e74c3c;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .search-bar {
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .filter-controls {
+          flex-direction: column;
+        }
+
+        .articles-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .pagination {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .modal-content {
+          margin: 10px;
+          max-height: calc(100vh - 20px);
+        }
+
+        .card-actions {
+          flex-direction: column;
+          gap: 8px;
+        }
+      }
+    </style>
+  </body>
+</html>

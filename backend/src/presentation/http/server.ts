@@ -1,50 +1,45 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { articleController } from "../../config/container";
-import { buildArticleRoutes } from "./routes/articleRoutes";
-import { errorHandler } from "./middlewares/errorHandler";
-import { notFound } from "./middlewares/notFound";
-import { cors } from "./middlewares/cors";
-import { ENV } from "../../config/env";
+import { articleController, aiAssistService } from "../../config/container.js";
+import { buildArticleRoutes } from "./routes/articleRoutes.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
+import { notFound } from "./middlewares/notFound.js";
+import { cors } from "./middlewares/cors.js";
+import { ENV } from "../../config/env.js";
+import { aiAssistSchema } from "./dto/AiAssistDTO.js";
 
 export function createApp() {
     const app = express();
-
-    // CORS 中介軟體（必須在其他中介軟體之前）
     app.use(cors);
-
-    // 中介軟體
     app.use(express.json());
-
-    // 靜態檔案（前端後台）
     app.use(express.static(path.join(process.cwd(), 'public')));
 
-    // API 路由
     app.use("/api", buildArticleRoutes(articleController));
 
-    // 根路徑重導向到後台
-    app.get('/', (req, res) => {
-        res.redirect('/admin.html');
+    app.post('/api/ai/assist', async (req, res, next) => {
+        try {
+            const dto = aiAssistSchema.parse(req.body);
+            const result = await aiAssistService.assist(dto);
+            res.json({
+                improvedContent: result.improvedContent,
+                promptLog: result.log,
+            });
+        } catch (err) {
+            next(err);
+        }
     });
 
-    // 管理介面別名路由
-    app.get('/admin', (req, res) => {
-        res.redirect('/admin.html');
-    });
+    app.get('/', (req, res) => { res.redirect('/admin.html'); });
+    app.get('/admin', (req, res) => { res.redirect('/admin.html'); });
 
-    // 錯誤處理
     app.use(notFound);
     app.use(errorHandler);
-
     return app;
 }
 
-// 直接啟動伺服器（開發模式）
-// 檢查是否為主模組（ES 模組版本）
 const __filename = fileURLToPath(import.meta.url);
 const isMainModule = process.argv[1] === __filename;
-
 if (isMainModule) {
     const app = createApp();
     app.listen(ENV.PORT, '0.0.0.0', () => {

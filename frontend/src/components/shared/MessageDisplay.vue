@@ -1,5 +1,15 @@
 <template>
-  <div v-if="message?.text" :class="['message', message.type]">
+  <div 
+    v-if="message?.text" 
+    :class="[
+      'px-4 py-3 rounded-md border transition-all duration-300 ease-in-out',
+      {
+        'bg-green-50 border-green-200 text-green-800': message.type === 'success',
+        'bg-red-50 border-red-200 text-red-800': message.type === 'error',
+        'bg-blue-50 border-blue-200 text-blue-800': message.type === 'info'
+      }
+    ]"
+  >
     {{ message.text }}
   </div>
 </template>
@@ -52,29 +62,3 @@ watch(
   },
 )
 </script>
-
-<style scoped>
-.message {
-  padding: 10px;
-  border-radius: 4px;
-  margin: 10px 0;
-}
-
-.message.success {
-  color: #155724;
-  background: #d4edda;
-  border: 1px solid #c3e6cb;
-}
-
-.message.error {
-  color: #721c24;
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-}
-
-.message.info {
-  color: #0c5460;
-  background: #d1ecf1;
-  border: 1px solid #bee5eb;
-}
-</style>

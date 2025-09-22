@@ -1,16 +1,26 @@
-# ITHome 2025 - 部落格管理系統
+# ITHome 2025 - AI 輔助部落格管理系統
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Test Coverage](https://img.shields.io/badge/coverage-85%25-green)
 ![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)
 ![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933)
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991)
 
-遵循 **Kent Beck 的 TDD** 和 **Tidy First** 原則開發的現代化部落格管理系統。
+遵循 **Kent Beck 的 TDD** 和 **Tidy First** 原則開發的現代化部落格管理系統，整合 **OpenAI GPT** 提供智能寫作輔助。
 
-## 📋 目錄
+## ✨ 主要特色
+
+- 🤖 **AI 寫作輔助**: 整合 OpenAI GPT 模型，提供智能內容建議
+- � **即時編輯**: 在創建和編輯頁面都支援 AI 協助
+- 💾 **智能日誌**: 自動記錄所有 AI 互動歷史
+- 🎯 **靈活操作**: 支援套用建議或附加到現有內容
+- 🔒 **安全可靠**: 完整的錯誤處理和 API 密鑰保護
+
+## �📋 目錄
 
 - [專案概述](#專案概述)
+- [AI 功能](#ai-功能)
 - [目前進度](#目前進度)
 - [技術架構](#技術架構)
 - [開發環境設定](#開發環境設定)
@@ -31,6 +41,39 @@
 - ✅ **測試覆蓋率 85%+** - 高品質程式碼保證
 - ✅ **響應式設計** - 支援各種裝置
 - ✅ **RESTful API** - 標準化 API 設計
+- 🤖 **AI 寫作輔助** - OpenAI GPT 整合
+
+## 🤖 AI 功能
+
+### 智能寫作輔助
+
+本系統整合了 OpenAI GPT 模型，為部落格寫作提供智能協助：
+
+- **內容優化**: AI 分析現有內容並提供改善建議
+- **結構調整**: 自動優化文章邏輯結構和段落安排
+- **風格改寫**: 根據目標受眾調整寫作風格
+- **範例生成**: 為技術文章生成實用的程式碼範例
+
+### 使用方式
+
+1. 在文章編輯頁面點擊 "🤖 AI 協助" 按鈕
+2. 輸入具體的改善需求（例如："改善這篇文章的開頭"）
+3. AI 會分析內容並提供建議
+4. 選擇套用建議或附加到現有內容
+
+### 快速開始 AI 功能
+
+```bash
+# 1. 設定 OpenAI API 密鑰
+echo 'OPENAI_API_KEY="your-api-key-here"' >> backend/.env
+
+# 2. 啟動服務
+npm run dev:all
+
+# 3. 開始使用 AI 寫作輔助！
+```
+
+📖 **詳細使用指南**: [AI_USAGE_GUIDE.md](./AI_USAGE_GUIDE.md)
 
 ## 📊 目前進度
 

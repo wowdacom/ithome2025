@@ -64,6 +64,74 @@
       button.danger {
         background: #dc3545;
       }
+      button.ai-assist {
+        background: #28a745;
+        margin-left: 10px;
+      }
+      button.ai-assist:hover {
+        background: #218838;
+      }
+      .ai-panel {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        display: none;
+      }
+      .ai-panel.show {
+        display: block;
+        animation: slideDown 0.3s ease-out;
+      }
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .ai-prompt-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      .ai-prompt-group input {
+        flex: 1;
+      }
+      .ai-result {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 10px;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .ai-actions {
+        margin-top: 10px;
+      }
+      .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
       .search-section {
         background: #f8f9fa;
         padding: 15px;
@@ -233,6 +301,12 @@
               category: "",
               content: "",
             },
+            aiPanel: {
+              show: false,
+              loading: false,
+              prompt: "",
+              result: "",
+            },
           };
         },
         template: `
@@ -264,7 +338,53 @@
                   v-model="form.content" 
                   required
                 ></textarea>
+                <button 
+                  type="button" 
+                  @click="toggleAiPanel" 
+                  class="ai-assist"
+                  :disabled="loading || aiPanel.loading"
+                >
+                  🤖 AI 協助
+                </button>
               </div>
+              
+              <!-- AI 協助面板 -->
+              <div :class="['ai-panel', { show: aiPanel.show }]">
+                <h4>🤖 AI 寫作協助</h4>
+                <div class="ai-prompt-group">
+                  <input 
+                    type="text" 
+                    v-model="aiPanel.prompt" 
+                    placeholder="輸入您的需求，例如：幫我寫一篇關於 JavaScript 的文章"
+                    @keyup.enter="handleAiAssist"
+                  />
+                  <button 
+                    type="button" 
+                    @click="handleAiAssist" 
+                    :disabled="!aiPanel.prompt.trim() || aiPanel.loading"
+                  >
+                    <span v-if="aiPanel.loading" class="loading-spinner"></span>
+                    {{ aiPanel.loading ? '生成中...' : '生成內容' }}
+                  </button>
+                </div>
+                
+                <div v-if="aiPanel.result" class="ai-result">
+                  {{ aiPanel.result }}
+                </div>
+                
+                <div v-if="aiPanel.result" class="ai-actions">
+                  <button type="button" @click="applyAiResult">
+                    套用到內容
+                  </button>
+                  <button type="button" @click="appendAiResult" class="secondary">
+                    附加到內容
+                  </button>
+                  <button type="button" @click="clearAiResult" class="secondary">
+                    清除結果
+                  </button>
+                </div>
+              </div>
+              
               <button type="submit" :disabled="loading">
                 {{ loading ? '新增中...' : '新增文章' }}
               </button>
@@ -284,9 +404,68 @@
               category: "",
               content: "",
             };
+            this.aiPanel = {
+              show: false,
+              loading: false,
+              prompt: "",
+              result: "",
+            };
           },
           clearForm() {
             this.resetForm();
+          },
+          toggleAiPanel() {
+            this.aiPanel.show = !this.aiPanel.show;
+            if (!this.aiPanel.show) {
+              this.clearAiResult();
+            }
+          },
+          async handleAiAssist() {
+            if (!this.aiPanel.prompt.trim()) return;
+
+            try {
+              this.aiPanel.loading = true;
+
+              const requestBody = {
+                prompt: this.aiPanel.prompt,
+                articleContent: this.form.content || undefined,
+              };
+
+              const response = await fetch("/api/ai/assist", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+              });
+
+              if (!response.ok) {
+                throw new Error(`AI 協助失敗: ${response.status}`);
+              }
+
+              const result = await response.json();
+              this.aiPanel.result =
+                result.improvedContent || result.content || "無法獲得 AI 回應";
+            } catch (error) {
+              console.error("AI 協助錯誤:", error);
+              this.aiPanel.result = `錯誤: ${error.message}`;
+            } finally {
+              this.aiPanel.loading = false;
+            }
+          },
+          applyAiResult() {
+            this.form.content = this.aiPanel.result;
+            this.clearAiResult();
+          },
+          appendAiResult() {
+            this.form.content = this.form.content
+              ? this.form.content + "\n\n" + this.aiPanel.result
+              : this.aiPanel.result;
+            this.clearAiResult();
+          },
+          clearAiResult() {
+            this.aiPanel.result = "";
+            this.aiPanel.prompt = "";
           },
         },
       };
@@ -378,6 +557,12 @@
               category: "",
               content: "",
             },
+            aiPanel: {
+              show: false,
+              loading: false,
+              prompt: "",
+              result: "",
+            },
           };
         },
         template: `
@@ -437,7 +622,53 @@
                         v-model="editForm.content" 
                         required
                       ></textarea>
+                      <button 
+                        type="button" 
+                        @click="toggleAiPanel" 
+                        class="ai-assist"
+                        :disabled="loading || aiPanel.loading"
+                      >
+                        🤖 AI 協助
+                      </button>
                     </div>
+                    
+                    <!-- AI 協助面板 -->
+                    <div :class="['ai-panel', { show: aiPanel.show }]">
+                      <h4>🤖 AI 寫作協助</h4>
+                      <div class="ai-prompt-group">
+                        <input 
+                          type="text" 
+                          v-model="aiPanel.prompt" 
+                          placeholder="輸入您的需求，例如：改善這篇文章的結構"
+                          @keyup.enter="handleAiAssist"
+                        />
+                        <button 
+                          type="button" 
+                          @click="handleAiAssist" 
+                          :disabled="!aiPanel.prompt.trim() || aiPanel.loading"
+                        >
+                          <span v-if="aiPanel.loading" class="loading-spinner"></span>
+                          {{ aiPanel.loading ? '生成中...' : '生成內容' }}
+                        </button>
+                      </div>
+                      
+                      <div v-if="aiPanel.result" class="ai-result">
+                        {{ aiPanel.result }}
+                      </div>
+                      
+                      <div v-if="aiPanel.result" class="ai-actions">
+                        <button type="button" @click="applyAiResult">
+                          套用到內容
+                        </button>
+                        <button type="button" @click="appendAiResult" class="secondary">
+                          附加到內容
+                        </button>
+                        <button type="button" @click="clearAiResult" class="secondary">
+                          清除結果
+                        </button>
+                      </div>
+                    </div>
+                    
                     <button type="submit" :disabled="loading">
                       {{ loading ? '更新中...' : '更新' }}
                     </button>
@@ -467,6 +698,12 @@
                   category: article.category,
                   content: article.content,
                 };
+                this.aiPanel = {
+                  show: false,
+                  loading: false,
+                  prompt: "",
+                  result: "",
+                };
               }
             }
           },
@@ -477,6 +714,12 @@
               category: "",
               content: "",
             };
+            this.aiPanel = {
+              show: false,
+              loading: false,
+              prompt: "",
+              result: "",
+            };
           },
           handleUpdate(id) {
             this.$emit("update-article", id, { ...this.editForm });
@@ -485,6 +728,59 @@
           formatDate(dateStr) {
             if (!dateStr) return "N/A";
             return new Date(dateStr).toLocaleString("zh-TW");
+          },
+          toggleAiPanel() {
+            this.aiPanel.show = !this.aiPanel.show;
+            if (!this.aiPanel.show) {
+              this.clearAiResult();
+            }
+          },
+          async handleAiAssist() {
+            if (!this.aiPanel.prompt.trim()) return;
+
+            try {
+              this.aiPanel.loading = true;
+
+              const requestBody = {
+                prompt: this.aiPanel.prompt,
+                articleContent: this.editForm.content || undefined,
+              };
+
+              const response = await fetch("/api/ai/assist", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestBody),
+              });
+
+              if (!response.ok) {
+                throw new Error(`AI 協助失敗: ${response.status}`);
+              }
+
+              const result = await response.json();
+              this.aiPanel.result =
+                result.improvedContent || result.content || "無法獲得 AI 回應";
+            } catch (error) {
+              console.error("AI 協助錯誤:", error);
+              this.aiPanel.result = `錯誤: ${error.message}`;
+            } finally {
+              this.aiPanel.loading = false;
+            }
+          },
+          applyAiResult() {
+            this.editForm.content = this.aiPanel.result;
+            this.clearAiResult();
+          },
+          appendAiResult() {
+            this.editForm.content = this.editForm.content
+              ? this.editForm.content + "\n\n" + this.aiPanel.result
+              : this.aiPanel.result;
+            this.clearAiResult();
+          },
+          clearAiResult() {
+            this.aiPanel.result = "";
+            this.aiPanel.prompt = "";
           },
         },
       };

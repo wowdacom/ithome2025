@@ -1,137 +1,50 @@
 <template>
-  <div class="admin-container">
-    <header class="admin-header">
-      <h1>部落格後台管理</h1>
-      <nav class="admin-nav">
-        <router-link to="/blog" class="nav-link">查看部落格</router-link>
-      </nav>
+  <div class="min-h-screen bg-gray-50">
+    <header class="bg-white shadow-sm border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+          <h1 class="text-2xl font-bold text-gray-900">部落格後台管理</h1>
+          <nav>
+            <router-link 
+              to="/blog" 
+              class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200"
+            >
+              查看部落格
+            </router-link>
+          </nav>
+        </div>
+      </div>
     </header>
 
-    <!-- 訊息提示組件 -->
-    <MessageDisplay :message="message" @clear="clearMessage" />
+    <!-- 導航選項卡 -->
+    <nav class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex space-x-8">
+          <router-link 
+            to="/admin/articles" 
+            class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm transition-colors duration-200"
+            active-class="!text-blue-600 !border-blue-600"
+          >
+            📚 文章管理
+          </router-link>
+          <router-link 
+            to="/admin/create-article" 
+            class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm transition-colors duration-200"
+            active-class="!text-blue-600 !border-blue-600"
+          >
+            📝 新增文章
+          </router-link>
+        </div>
+      </div>
+    </nav>
 
-    <!-- 新增文章表單組件 -->
-    <ArticleForm ref="articleForm" :loading="loading" @create-article="handleCreateArticle" />
-
-    <!-- 搜尋組件 -->
-    <ArticleSearch ref="articleSearch" @search="handleSearch" @load-all="handleLoadAll" />
-
-    <!-- 文章列表組件 -->
-    <ArticleList
-      :articles="articles"
-      :loading="loading"
-      @edit-article="handleEditArticle"
-      @delete-article="handleDeleteArticle"
-    />
+    <!-- 路由內容 -->
+    <main class="flex-1">
+      <router-view />
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
-import MessageDisplay from '../../components/shared/MessageDisplay.vue'
-import ArticleForm from '../../components/ArticleForm.vue'
-import ArticleSearch from '../../components/ArticleSearch.vue'
-import ArticleList from '../../components/ArticleList.vue'
-import { useArticleStore } from '../../stores/articleStore'
-import type { Article, CreateArticleRequest, SearchFilters } from '../../types/article'
-
-// 組件引用
-const articleForm = ref<InstanceType<typeof ArticleForm>>()
-const articleSearch = ref<InstanceType<typeof ArticleSearch>>()
-
-// 使用 Pinia store
-const store = useArticleStore()
-
-// 從 store 取得狀態 (使用 storeToRefs 保持響應性)
-const { articles, loading, message } = storeToRefs(store)
-
-// 編輯狀態（暫時保留在組件層級）
-const editingArticle = ref<Article | null>(null)
-
-// 初始化
-onMounted(() => {
-  store.loadArticles()
-})
-
-// 組件事件處理器
-async function handleCreateArticle(articleData: CreateArticleRequest) {
-  await store.createArticle(articleData)
-
-  // 清除表單
-  if (articleForm.value) {
-    articleForm.value.clearForm()
-  }
-}
-
-function handleSearch(filters: SearchFilters) {
-  if (Object.values(filters).every((value) => !value)) {
-    // 如果所有搜尋條件都是空的，載入全部文章
-    store.loadArticles()
-  } else {
-    store.searchArticles(filters)
-  }
-}
-
-function handleLoadAll() {
-  store.loadArticles()
-}
-
-function handleEditArticle(article: Article) {
-  editingArticle.value = article
-  // 這裡可以開啟編輯模式或導航到編輯頁面
-  // 暫時顯示訊息表示編輯功能被觸發
-  store.showMessage(`準備編輯文章: ${article.title}`, 'info')
-}
-
-function handleDeleteArticle(id: string) {
-  store.deleteArticle(id)
-}
-
-function clearMessage() {
-  store.clearMessage()
-}
+// 移除原本的組件邏輯，現在只作為導航容器
 </script>
-
-<style scoped>
-.admin-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e9ecef;
-}
-
-.admin-header h1 {
-  color: #333;
-  margin: 0;
-}
-
-.admin-nav {
-  display: flex;
-  gap: 15px;
-}
-
-.nav-link {
-  padding: 8px 16px;
-  background: #007bff;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.nav-link:hover {
-  background: #0056b3;
-}
-</style>

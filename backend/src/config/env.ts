@@ -12,7 +12,8 @@ export const ENV = {
     PORT: parseInt(process.env.PORT || '3000', 10),
     SUPABASE_URL: requireEnv('SUPABASE_URL'),
     SUPABASE_ANON_KEY: requireEnv('SUPABASE_ANON_KEY'),
-    SUPABASE_SERVICE_ROLE_KEY: requireEnv('SUPABASE_SERVICE_ROLE_KEY', { optional: true })
+    SUPABASE_SERVICE_ROLE_KEY: requireEnv('SUPABASE_SERVICE_ROLE_KEY', { optional: true }),
+    OPENAI_API_KEY: requireEnv('OPENAI_API_KEY')
 };
 
 export function envReadyForSupabase(): boolean {

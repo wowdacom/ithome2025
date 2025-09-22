@@ -1,213 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* 全域樣式 - 統一的設計系統 */
 
-/* 重置樣式 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* 基礎樣式 */
-body {
-  font-family: 'Helvetica Neue', Arial, sans-serif;
-  background-color: #f8f9fa;
-  color: #333;
-  line-height: 1.6;
-  min-height: 100vh;
-}
-
-#app {
-  min-height: 100vh;
-}
-
-/* 共用設計代幣 */
-:root {
-  /* 顏色系統 */
-  --primary-color: #667eea;
-  --primary-dark: #5a67d8;
-  --secondary-color: #764ba2;
-  --success-color: #48bb78;
-  --warning-color: #ed8936;
-  --error-color: #f56565;
-  --info-color: #4299e1;
-
-  /* 文字顏色 */
-  --text-primary: #2c3e50;
-  --text-secondary: #5a6c7d;
-  --text-muted: #7f8c8d;
-
-  /* 背景顏色 */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-muted: #e9ecef;
-
-  /* 陰影 */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);
-
-  /* 圓角 */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 25px;
-
-  /* 間距 */
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
-}
-
-/* 共用按鈕樣式 */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 24px;
-  border: none;
-  border-radius: var(--radius-xl);
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.95rem;
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: white;
-}
-
-.btn-primary:hover {
-  background: var(--primary-dark);
-}
-
-.btn-secondary {
-  background: var(--bg-muted);
-  color: var(--text-primary);
-}
-
-.btn-secondary:hover {
-  background: #dee2e6;
-}
-
-/* 共用卡片樣式 */
-.card {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-}
-
-.card-body {
-  padding: var(--space-xl);
-}
-
-/* 共用容器樣式 */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--space-lg);
-}
-
-.container-sm {
-  max-width: 800px;
-}
-
-/* 共用載入動畫 */
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--bg-muted);
-  border-top: 4px solid var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* 共用過渡動畫 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-up-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.slide-up-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .container {
-    padding: 0 var(--space-md);
-  }
-
+/* 自定義 Tailwind 組件 */
+@layer components {
   .btn {
-    padding: 10px 20px;
-    font-size: 0.9rem;
+    @apply inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-full text-white transition-all duration-200 ease-in-out;
   }
 
-  .card-body {
-    padding: var(--space-lg);
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-600 hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+  }
+
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden transition-shadow duration-200;
+  }
+
+  .card:hover {
+    @apply shadow-lg;
+  }
+
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-2;
+  }
+
+  .form-group {
+    @apply mb-4;
+  }
+
+  .loading-spinner {
+    @apply w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin;
+  }
+
+  .message-success {
+    @apply bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md;
+  }
+
+  .message-error {
+    @apply bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md;
+  }
+
+  .message-info {
+    @apply bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md;
   }
 }
 
-@media (max-width: 480px) {
-  .container {
-    padding: 0 var(--space-sm);
+/* 可訪問性與特殊設置 */
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans;
   }
 
-  .card-body {
-    padding: var(--space-md);
+  #app {
+    @apply min-h-screen;
   }
-}
-
-/* 可訪問性 */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* 焦點樣式 */
-button:focus,
-a:focus,
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
 }
