@@ -10,11 +10,7 @@
 
     <!-- 搜尋組件 -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <ArticleSearch 
-        ref="articleSearch" 
-        @search="handleSearch" 
-        @load-all="handleLoadAll" 
-      />
+      <ArticleSearch ref="articleSearch" @search="handleSearch" @load-all="handleLoadAll" />
     </div>
 
     <!-- 文章列表組件 -->

@@ -41,7 +41,7 @@ export function useAiAssist() {
     aiPanel.loading = true
     try {
       console.log('發送 AI 請求:', { prompt: aiPanel.prompt, currentContent })
-      
+
       const response = await apiClient.post<AiAssistResponse>('/ai/assist', {
         prompt: aiPanel.prompt,
         articleContent: currentContent

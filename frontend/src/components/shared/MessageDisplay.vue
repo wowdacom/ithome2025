@@ -1,13 +1,13 @@
 <template>
-  <div 
-    v-if="message?.text" 
+  <div
+    v-if="message?.text"
     :class="[
       'px-4 py-3 rounded-md border transition-all duration-300 ease-in-out',
       {
         'bg-green-50 border-green-200 text-green-800': message.type === 'success',
         'bg-red-50 border-red-200 text-red-800': message.type === 'error',
-        'bg-blue-50 border-blue-200 text-blue-800': message.type === 'info'
-      }
+        'bg-blue-50 border-blue-200 text-blue-800': message.type === 'info',
+      },
     ]"
   >
     {{ message.text }}

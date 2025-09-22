@@ -10,11 +10,7 @@
 
     <!-- 新增文章表單組件 -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <ArticleForm
-        ref="articleFormRef"
-        :loading="loading"
-        @create-article="handleCreateArticle"
-      />
+      <ArticleForm ref="articleFormRef" :loading="loading" @create-article="handleCreateArticle" />
     </div>
   </div>
 </template>
@@ -32,16 +28,15 @@ const articleFormRef = ref<InstanceType<typeof ArticleForm>>()
 
 const handleCreateArticle = async (articleData: CreateArticleRequest) => {
   loading.value = true
-  
+
   try {
     await apiClient.post('/articles', articleData)
     messageState.value = { text: '文章建立成功！', type: 'success' }
-    
+
     // 重置表單
     if (articleFormRef.value) {
       articleFormRef.value.resetForm()
     }
-    
   } catch (error) {
     console.error('建立文章失敗:', error)
     messageState.value = { text: '建立文章失敗，請稍後再試', type: 'error' }
