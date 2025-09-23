@@ -1,5 +1,5 @@
 <template>
-  <section class="max-w-2xl mx-auto p-6">
+  <section class="max-w-6xl mx-auto p-6">
     <h2 class="text-2xl font-bold text-gray-900 mb-6">新增文章</h2>
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <div class="form-group">
@@ -28,25 +28,54 @@
         />
       </div>
 
+      <!-- 內容編輯與預覽區域 -->
       <div class="form-group">
-        <label for="content" class="form-label">內容</label>
-        <textarea
-          id="content"
-          name="content"
-          v-model="form.content"
-          required
-          rows="8"
-          class="form-input resize-y"
-          placeholder="請輸入文章內容"
-        ></textarea>
-        <button
-          type="button"
-          @click="toggleAiPanel"
-          class="mt-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-          :disabled="loading || aiPanel.loading"
-        >
-          🤖 AI 協助
-        </button>
+        <div class="flex items-center justify-between mb-3">
+          <label for="content" class="form-label">內容</label>
+          <div class="flex items-center space-x-2">
+            <button
+              type="button"
+              @click="showPreview = !showPreview"
+              class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+            >
+              {{ showPreview ? '隱藏預覽' : '顯示預覽' }}
+            </button>
+            <button
+              type="button"
+              @click="toggleAiPanel"
+              class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              :disabled="loading || aiPanel.loading"
+            >
+              🤖 AI 協助
+            </button>
+          </div>
+        </div>
+
+        <div class="grid gap-4" :class="showPreview ? 'grid-cols-2' : 'grid-cols-1'">
+          <!-- 編輯區域 -->
+          <div>
+            <textarea
+              id="content"
+              name="content"
+              v-model="form.content"
+              required
+              rows="12"
+              class="form-input resize-y"
+              placeholder="請輸入文章內容 (支援 Markdown 格式)"
+            ></textarea>
+          </div>
+
+          <!-- 預覽區域 -->
+          <div v-if="showPreview" class="border rounded-lg bg-gray-50">
+            <div class="bg-gray-100 px-4 py-2 border-b rounded-t-lg">
+              <span class="text-sm font-medium text-gray-700">即時預覽</span>
+            </div>
+            <div
+              class="p-4 prose prose-sm max-w-none min-h-[300px] bg-white"
+              v-html="previewContent"
+            ></div>
+          </div>
+        </div>
       </div>
 
       <!-- AI 協助面板 -->
@@ -72,9 +101,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import type { CreateArticleRequest } from '../types/article'
 import { useAiAssist } from '../composables/useAiAssist'
+import { useMarkdown } from '../composables/useMarkdown'
 import AiAssistPanel from './shared/AiAssistPanel.vue'
 
 interface Props {
@@ -90,6 +120,17 @@ withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+
+// 預覽功能
+const showPreview = ref(false)
+const { renderMarkdown } = useMarkdown()
+
+const previewContent = computed(() => {
+  if (!form.content.trim()) {
+    return '<p class="text-gray-500 italic">請在左側輸入內容以查看預覽...</p>'
+  }
+  return renderMarkdown(form.content)
+})
 
 const form = reactive<CreateArticleRequest>({
   title: '',

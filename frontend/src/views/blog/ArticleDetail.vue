@@ -22,7 +22,7 @@
       </header>
 
       <div class="article-body">
-        <div class="content" v-html="article.content"></div>
+        <div class="content prose prose-lg max-w-none" v-html="renderedContent"></div>
       </div>
 
       <footer class="article-footer">
@@ -57,15 +57,25 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useArticleStore } from '../../stores/articleStore'
+import { useMarkdown } from '../../composables/useMarkdown'
 import type { Article } from '../../types/article'
 
 const route = useRoute()
 const router = useRouter()
 const store = useArticleStore()
 const { loading } = storeToRefs(store)
+const { renderMarkdown } = useMarkdown()
 
 const article = ref<Article | null>(null)
 const articleId = computed(() => route.params.id as string)
+
+// 渲染 Markdown 內容
+const renderedContent = computed(() => {
+  if (!article.value?.content) {
+    return ''
+  }
+  return renderMarkdown(article.value.content)
+})
 
 onMounted(async () => {
   await loadArticle()
@@ -205,64 +215,7 @@ function goBack() {
   font-size: 1.05rem;
 }
 
-.content :deep(h1),
-.content :deep(h2),
-.content :deep(h3),
-.content :deep(h4),
-.content :deep(h5),
-.content :deep(h6) {
-  color: #2c3e50;
-  margin-top: 2em;
-  margin-bottom: 1em;
-}
-
-.content :deep(h1) {
-  font-size: 1.8rem;
-}
-.content :deep(h2) {
-  font-size: 1.5rem;
-}
-.content :deep(h3) {
-  font-size: 1.3rem;
-}
-
-.content :deep(p) {
-  margin-bottom: 1.5em;
-}
-
-.content :deep(ul),
-.content :deep(ol) {
-  margin-bottom: 1.5em;
-  padding-left: 2em;
-}
-
-.content :deep(li) {
-  margin-bottom: 0.5em;
-}
-
-.content :deep(blockquote) {
-  border-left: 4px solid #667eea;
-  padding-left: 20px;
-  margin: 2em 0;
-  color: #5a6c7d;
-  font-style: italic;
-}
-
-.content :deep(code) {
-  background: #f8f9fa;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.9em;
-}
-
-.content :deep(pre) {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  overflow-x: auto;
-  margin: 2em 0;
-}
+/* 移除深度選擇器的樣式，使用 Tailwind prose 的預設樣式 */
 
 .article-footer {
   padding: 30px 40px;

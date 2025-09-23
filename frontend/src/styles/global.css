@@ -1,3 +1,6 @@
+/* highlight.js 代碼高亮樣式 */
+@import 'highlight.js/styles/github-dark.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

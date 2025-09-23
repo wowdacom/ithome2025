@@ -24,12 +24,56 @@
   - 前後端數據流修復
   - 中文輸入法鍵盤事件處理優化 (Enter/Shift+Enter)
   - 動態高度調整 textarea (無滾動條，自適應內容)
+  - **新增 Markdown 代碼塊支援**
+    - 整合 marked.js 和 highlight.js
+    - AI 回傳內容支援語法高亮
+    - 程式碼塊自動格式化
+    - 統一 AiAssistPanel 和 ArticleList 顯示
 
 ## 🔄 當前進行中
 
 ### AI 功能測試與驗證
 
-- [ ] **測試 ArticleForm AI 功能**
+- [x] **Markdown 代碼塊功能實作完成**
+
+  - useMarkdown.ts composable 建立
+  - highlight.js 語法高亮整合
+  - Tailwind CSS 樣式優化
+  - 多語言代碼塊支援
+
+- [x] **即時 Markdown 預覽功能實作完成**
+
+  - ArticleForm.vue 新增並排預覽面板
+  - ArticleList.vue 編輯時同樣支援預覽
+  - 響應式 Grid 佈局實現
+  - 預覽狀態管理和自動重置
+  - 空內容提示和用戶體驗優化
+
+- [x] **單文頁面 Markdown 支援實作完成**
+  - ArticleDetail.vue 新增 Markdown 渲染功能
+  - BlogArticleList.vue 更新預覽文字擷取邏輯
+  - 整合 Tailwind prose 樣式系統
+  - 統一前端 Markdown 渲染體驗
+  - 支援完整代碼塊語法高亮
+
+## 🔄 當前進行中
+
+### 功能測試與用戶體驗驗證
+
+- [x] **Markdown 渲染系統整合完成**
+
+  - 編輯器預覽功能 ✅
+  - AI 協助 Markdown 顯示 ✅
+  - 單文頁面 Markdown 渲染 ✅
+  - 文章列表預覽優化 ✅
+
+- [ ] **綜合功能測試**
+
+  - 驗證 Markdown 即時渲染
+  - 測試代碼塊語法高亮
+  - 檢查響應式佈局
+
+- [ ] **測試編輯文章預覽功能**
 
   - 在新增文章頁面測試 AI 協助功能
   - 驗證提示輸入、內容生成流程

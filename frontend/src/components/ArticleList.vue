@@ -96,21 +96,50 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">內容</label>
-                  <textarea
-                    v-model="editForm.content"
-                    required
-                    rows="6"
-                    class="form-input resize-y"
-                  ></textarea>
-                  <button
-                    type="button"
-                    @click="toggleAiPanel"
-                    class="mt-2 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                    :disabled="loading || aiPanel.loading"
-                  >
-                    🤖 AI 協助
-                  </button>
+                  <div class="flex items-center justify-between mb-3">
+                    <label class="form-label">內容</label>
+                    <div class="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        @click="showEditPreview = !showEditPreview"
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                      >
+                        {{ showEditPreview ? '隱藏預覽' : '顯示預覽' }}
+                      </button>
+                      <button
+                        type="button"
+                        @click="toggleAiPanel"
+                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                        :disabled="loading || aiPanel.loading"
+                      >
+                        🤖 AI 協助
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="grid gap-4" :class="showEditPreview ? 'grid-cols-2' : 'grid-cols-1'">
+                    <!-- 編輯區域 -->
+                    <div>
+                      <textarea
+                        v-model="editForm.content"
+                        required
+                        rows="8"
+                        class="form-input resize-y"
+                        placeholder="請輸入文章內容 (支援 Markdown 格式)"
+                      ></textarea>
+                    </div>
+
+                    <!-- 預覽區域 -->
+                    <div v-if="showEditPreview" class="border rounded-lg bg-gray-50">
+                      <div class="bg-gray-100 px-4 py-2 border-b rounded-t-lg">
+                        <span class="text-sm font-medium text-gray-700">即時預覽</span>
+                      </div>
+                      <div
+                        class="p-4 prose prose-sm max-w-none min-h-[200px] bg-white"
+                        v-html="editPreviewContent"
+                      ></div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- AI 協助面板 -->
@@ -148,10 +177,9 @@
 
                   <div
                     v-if="aiPanel.result"
-                    class="bg-white p-3 rounded-md border border-blue-200 mb-3 whitespace-pre-wrap max-h-32 overflow-y-auto text-gray-700 text-sm leading-relaxed"
-                  >
-                    {{ aiPanel.result }}
-                  </div>
+                    class="bg-white p-3 rounded-md border border-blue-200 mb-3 max-h-32 overflow-y-auto text-gray-700 text-sm leading-relaxed prose prose-sm max-w-none"
+                    v-html="renderedAiResult"
+                  ></div>
 
                   <div v-if="aiPanel.result" class="flex flex-wrap gap-2">
                     <button
@@ -195,13 +223,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { apiClient } from '../utils/apiClient'
+import { useMarkdown } from '../composables/useMarkdown'
 import type { Article } from '../types/article'
 
 const articles = ref<Article[]>([])
 const loading = ref(false)
 const editingId = ref<string | null>(null)
+const showEditPreview = ref(false)
+
+// Markdown 渲染
+const { renderMarkdown } = useMarkdown()
+
+// 編輯預覽內容
+const editPreviewContent = computed(() => {
+  if (!editForm.content.trim()) {
+    return '<p class="text-gray-500 italic">請在左側輸入內容以查看預覽...</p>'
+  }
+  return renderMarkdown(editForm.content)
+})
 
 // 編輯表單狀態
 const editForm = reactive({
@@ -216,6 +257,11 @@ const aiPanel = reactive({
   prompt: '',
   result: '',
   loading: false,
+})
+
+// AI 結果 Markdown 渲染
+const renderedAiResult = computed(() => {
+  return aiPanel.result ? renderMarkdown(aiPanel.result) : ''
 })
 
 // Constants
@@ -260,6 +306,7 @@ const handleUpdate = async (id: string) => {
 
 const cancelEdit = () => {
   editingId.value = null
+  showEditPreview.value = false
   editForm.title = ''
   editForm.category = ''
   editForm.content = ''

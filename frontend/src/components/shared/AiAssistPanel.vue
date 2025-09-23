@@ -15,7 +15,7 @@
         ref="textareaRef"
         :value="aiPanel.prompt"
         @input="handleInput"
-        placeholder="輸入您的需求，例如：改善這篇文章的結構&#10;Shift+Enter 換行，Enter 生成內容"
+        placeholder="輸入您的需求，例如：改善這篇文章的結構，加入程式碼範例&#10;支援 Markdown 代碼塊顯示&#10;Shift+Enter 換行，Enter 生成內容"
         @keydown="handleKeydown"
         rows="1"
         class="flex-1 px-4 py-3 border-2 border-transparent rounded-lg bg-white text-sm transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 focus:outline-none resize-none min-h-[2.75rem] max-h-32"
@@ -35,9 +35,12 @@
 
     <div
       v-if="aiPanel.result"
-      class="bg-white p-4 rounded-lg border border-blue-200 mb-4 whitespace-pre-wrap max-h-48 overflow-y-auto text-gray-700 leading-relaxed shadow-sm"
+      class="bg-white rounded-lg border border-blue-200 mb-4 max-h-96 overflow-y-auto text-gray-700 leading-relaxed shadow-sm"
     >
-      {{ aiPanel.result }}
+      <div
+        v-html="renderedResult"
+        class="p-4 prose prose-sm max-w-none prose-pre:p-0 prose-pre:bg-transparent prose-code:bg-gray-100 prose-code:text-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none"
+      ></div>
     </div>
 
     <div v-if="aiPanel.result" class="flex flex-wrap gap-2">
@@ -67,7 +70,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, computed } from 'vue'
+import { useMarkdown } from '../../composables/useMarkdown'
 
 interface Props {
   aiPanel: {
@@ -91,6 +95,12 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const { renderMarkdown } = useMarkdown()
+
+// 將 AI 結果渲染為 HTML
+const renderedResult = computed(() => {
+  return renderMarkdown(props.aiPanel.result)
+})
 
 const adjustTextareaHeight = async () => {
   await nextTick()

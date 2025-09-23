@@ -73,7 +73,28 @@ function formatDate(dateString: string): string {
 }
 
 function getPreview(content: string): string {
-  const plainText = content.replace(/<[^>]*>/g, '')
+  // 移除 Markdown 語法標記，獲取純文字內容
+  const plainText = content
+    // 移除代碼塊
+    .replace(/```[\s\S]*?```/g, '')
+    // 移除行內代碼
+    .replace(/`[^`]*`/g, '')
+    // 移除標題標記
+    .replace(/^#{1,6}\s+/gm, '')
+    // 移除粗體和斜體標記
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    // 移除連結語法，保留連結文字
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // 移除引用標記
+    .replace(/^>\s+/gm, '')
+    // 移除清單標記
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    // 移除多餘的空行
+    .replace(/\n\s*\n/g, '\n')
+    .trim()
+
   return plainText.length > 150 ? plainText.substring(0, 150) + '...' : plainText
 }
 </script>
