@@ -39,11 +39,13 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 有兩種方式建立管理員帳號：
 
 #### 方式一：透過 Supabase Dashboard
+
 1. 前往 **Authentication** > **Users**
 2. 點擊 **Add user**
 3. 輸入 email 和密碼
 
 #### 方式二：透過應用程式註冊
+
 1. 啟動應用程式：`npm run dev`
 2. 前往 `http://localhost:5173/login`
 3. 點擊「還沒有帳號？點此註冊」
@@ -52,6 +54,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ## 使用方式
 
 1. 啟動應用程式：
+
    ```bash
    cd frontend
    npm run dev
@@ -60,6 +63,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 2. 訪問 `http://localhost:5173`
 
 3. 若要進入後台管理，直接訪問 `http://localhost:5173/admin`
+
    - 未登入用戶會被重定向到登入頁面
    - 登入後會自動跳轉到後台
 
@@ -78,13 +82,16 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ## 故障排除
 
 ### 問題：無法連接到 Supabase
+
 - 檢查環境變數是否正確設定
 - 確認 Supabase 專案狀態正常
 
 ### 問題：登入後重定向失敗
+
 - 檢查 Supabase 的 Redirect URLs 設定
 - 確認路由守衛正常運作
 
 ### 問題：TypeScript 錯誤
+
 - 執行 `npm run type-check` 檢查類型錯誤
 - 確認所有依賴已正確安裝
