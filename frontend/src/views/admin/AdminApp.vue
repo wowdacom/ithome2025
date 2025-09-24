@@ -4,14 +4,23 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-4">
           <h1 class="text-2xl font-bold text-gray-900">部落格後台管理</h1>
-          <nav>
+          <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-600">
+              歡迎，{{ user?.email }}
+            </span>
             <router-link
               to="/blog"
               class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200"
             >
               查看部落格
             </router-link>
-          </nav>
+            <button
+              @click="handleLogout"
+              class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
+            >
+              登出
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -46,5 +55,21 @@
 </template>
 
 <script setup lang="ts">
-// 移除原本的組件邏輯，現在只作為導航容器
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+const user = computed(() => authStore.user)
+
+const handleLogout = async () => {
+  try {
+    await authStore.signOut()
+    router.push('/login')
+  } catch (error) {
+    console.error('登出失敗:', error)
+  }
+}
 </script>

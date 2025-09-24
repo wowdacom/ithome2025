@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { adminGuard, guestGuard } from './guards'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,10 +27,17 @@ const router = createRouter({
       ]
     },
     {
+      path: '/login',
+      name: 'AuthLogin',
+      component: () => import('../views/auth/Login.vue'),
+      beforeEnter: guestGuard
+    },
+    {
       path: '/admin',
       name: 'Admin',
       component: () => import('../views/admin/AdminApp.vue'),
       redirect: '/admin/articles',
+      beforeEnter: adminGuard,
       children: [
         {
           path: 'create-article',
