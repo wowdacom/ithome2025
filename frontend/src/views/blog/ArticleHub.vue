@@ -17,14 +17,14 @@
           <!-- Navigation -->
           <nav class="hidden md:flex space-x-8">
             <a href="#" class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium">
-              HOW IT WORKS
+              使用說明
             </a>
             <div class="relative">
               <button
                 @click="toggleBrowseMenu"
                 class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium inline-flex items-center"
               >
-                BROWSE
+                瀏覽文章
                 <svg class="ml-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fill-rule="evenodd"
@@ -36,7 +36,7 @@
               <!-- Dropdown menu would go here -->
             </div>
             <a href="#" class="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium">
-              SEARCH
+              搜尋
             </a>
           </nav>
 
@@ -94,7 +94,7 @@
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Search by keywords (React, Vue, JavaScript, etc.)"
+                placeholder="搜尋關鍵字 (React, Vue, JavaScript 等)"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 @input="handleSearch"
               />
@@ -102,7 +102,7 @@
                 @click="handleSearch"
                 class="absolute right-2 top-2 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
               >
-                Search
+                搜尋
               </button>
             </div>
           </div>
@@ -113,12 +113,12 @@
               <!-- Categories -->
               <div>
                 <div class="flex justify-between items-center mb-4">
-                  <h3 class="text-sm font-semibold text-gray-900">Categories</h3>
+                  <h3 class="text-sm font-semibold text-gray-900">分類</h3>
                   <button
                     @click="clearCategories"
                     class="text-xs text-blue-600 hover:text-blue-700"
                   >
-                    Clear
+                    清除
                   </button>
                 </div>
                 <div class="space-y-2">
@@ -142,12 +142,12 @@
               <!-- Publication Date -->
               <div>
                 <div class="flex justify-between items-center mb-4">
-                  <h3 class="text-sm font-semibold text-gray-900">Publication Date</h3>
+                  <h3 class="text-sm font-semibold text-gray-900">發布日期</h3>
                   <button
                     @click="clearDateFilters"
                     class="text-xs text-blue-600 hover:text-blue-700"
                   >
-                    Clear
+                    清除
                   </button>
                 </div>
                 <div class="space-y-2">
@@ -160,7 +160,7 @@
                       class="text-blue-600 focus:ring-blue-500"
                       @change="applyFilters"
                     />
-                    <span class="ml-2 text-sm text-gray-700">Today</span>
+                    <span class="ml-2 text-sm text-gray-700">今天</span>
                   </label>
                   <label class="flex items-center">
                     <input
@@ -171,7 +171,7 @@
                       class="text-blue-600 focus:ring-blue-500"
                       @change="applyFilters"
                     />
-                    <span class="ml-2 text-sm text-gray-700">This Week</span>
+                    <span class="ml-2 text-sm text-gray-700">本週</span>
                   </label>
                   <label class="flex items-center">
                     <input
@@ -182,7 +182,7 @@
                       class="text-blue-600 focus:ring-blue-500"
                       @change="applyFilters"
                     />
-                    <span class="ml-2 text-sm text-gray-700">This Month</span>
+                    <span class="ml-2 text-sm text-gray-700">本月</span>
                   </label>
                 </div>
               </div>
@@ -190,12 +190,12 @@
               <!-- Reading Time -->
               <div>
                 <div class="flex justify-between items-center mb-4">
-                  <h3 class="text-sm font-semibold text-gray-900">Reading Time</h3>
+                  <h3 class="text-sm font-semibold text-gray-900">閱讀時間</h3>
                   <button
                     @click="clearReadingTime"
                     class="text-xs text-blue-600 hover:text-blue-700"
                   >
-                    Clear
+                    清除
                   </button>
                 </div>
                 <div class="space-y-2">
@@ -208,7 +208,7 @@
                       class="text-blue-600 focus:ring-blue-500"
                       @change="applyFilters"
                     />
-                    <span class="ml-2 text-sm text-gray-700">Short (&lt; 5 min)</span>
+                    <span class="ml-2 text-sm text-gray-700">短文章 (&lt; 5 分鐘)</span>
                   </label>
                   <label class="flex items-center">
                     <input
@@ -219,7 +219,7 @@
                       class="text-blue-600 focus:ring-blue-500"
                       @change="applyFilters"
                     />
-                    <span class="ml-2 text-sm text-gray-700">Medium (5-15 min)</span>
+                    <span class="ml-2 text-sm text-gray-700">中等長度 (5-15 分鐘)</span>
                   </label>
                   <label class="flex items-center">
                     <input
@@ -230,7 +230,7 @@
                       class="text-blue-600 focus:ring-blue-500"
                       @change="applyFilters"
                     />
-                    <span class="ml-2 text-sm text-gray-700">Long (&gt; 15 min)</span>
+                    <span class="ml-2 text-sm text-gray-700">長文章 (&gt; 15 分鐘)</span>
                   </label>
                 </div>
               </div>
@@ -239,7 +239,7 @@
 
           <!-- Top Articles Widget -->
           <div class="bg-white rounded-lg shadow-sm border p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Articles</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">熱門文章</h3>
             <div class="space-y-4">
               <div
                 v-for="article in topArticles"
@@ -248,7 +248,7 @@
               >
                 <h4 class="text-sm font-medium text-gray-900 mb-1">{{ article.title }}</h4>
                 <p class="text-xs text-gray-500">
-                  {{ article.readCount || article.views || 0 }} reads
+                  {{ article.readCount || article.views || 0 }} 次閱讀
                 </p>
               </div>
             </div>
@@ -260,19 +260,19 @@
           <!-- Results Header -->
           <div class="flex justify-between items-center mb-6">
             <div>
-              <h2 class="text-lg font-semibold text-gray-900">RESULTS ({{ totalArticles }})</h2>
+              <h2 class="text-lg font-semibold text-gray-900">搜尋結果 ({{ totalArticles }})</h2>
             </div>
             <div class="flex items-center space-x-4">
-              <span class="text-sm text-gray-600">Sort by</span>
+              <span class="text-sm text-gray-600">排序方式</span>
               <select
                 v-model="sortBy"
                 @change="applySorting"
                 class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="relevance">Relevance</option>
-                <option value="date">Date</option>
-                <option value="title">Title</option>
-                <option value="views">Views</option>
+                <option value="relevance">相關性</option>
+                <option value="date">日期</option>
+                <option value="title">標題</option>
+                <option value="views">瀏覽次數</option>
               </select>
             </div>
           </div>
@@ -324,10 +324,10 @@
                   <!-- Reading Time & Views -->
                   <div class="ml-6 text-right">
                     <div class="text-sm font-medium text-gray-900 mb-1">
-                      {{ calculateReadingTime(article.content) }} min read
+                      {{ calculateReadingTime(article.content) }} 分鐘閱讀
                     </div>
                     <div class="text-xs text-gray-500">
-                      {{ article.views || article.readCount || 0 }} views
+                      {{ article.views || article.readCount || 0 }} 次瀏覽
                     </div>
                   </div>
                 </div>
@@ -385,39 +385,38 @@
               <span class="ml-2 text-xl font-semibold">Article Hub</span>
             </div>
             <p class="text-gray-400 text-sm">
-              Discover and share technical articles, tutorials, and insights from developers around
-              the world.
+              探索並分享來自世界各地開發者的技術文章、教學與見解。
             </p>
           </div>
 
           <div>
-            <h3 class="text-lg font-semibold mb-4">ARTICLES</h3>
+            <h3 class="text-lg font-semibold mb-4">文章</h3>
             <ul class="space-y-2 text-sm text-gray-400">
-              <li><a href="#" class="hover:text-white">How it works</a></li>
-              <li><a href="#" class="hover:text-white">Why we're here</a></li>
-              <li><a href="#" class="hover:text-white">Categories</a></li>
+              <li><a href="#" class="hover:text-white">如何運作</a></li>
+              <li><a href="#" class="hover:text-white">我們的理念</a></li>
+              <li><a href="#" class="hover:text-white">分類</a></li>
             </ul>
           </div>
 
           <div>
-            <h3 class="text-lg font-semibold mb-4">WRITERS</h3>
+            <h3 class="text-lg font-semibold mb-4">作者</h3>
             <ul class="space-y-2 text-sm text-gray-400">
-              <li><a href="#" class="hover:text-white">About</a></li>
-              <li><a href="#" class="hover:text-white">Time tracking</a></li>
-              <li><a href="#" class="hover:text-white">Developer</a></li>
-              <li><a href="#" class="hover:text-white">Resources</a></li>
+              <li><a href="#" class="hover:text-white">關於</a></li>
+              <li><a href="#" class="hover:text-white">時間追蹤</a></li>
+              <li><a href="#" class="hover:text-white">開發者</a></li>
+              <li><a href="#" class="hover:text-white">資源</a></li>
             </ul>
           </div>
 
           <div>
-            <h3 class="text-lg font-semibold mb-4">SUPPORT</h3>
+            <h3 class="text-lg font-semibold mb-4">支援</h3>
             <ul class="space-y-2 text-sm text-gray-400">
-              <li><a href="#" class="hover:text-white">Help center</a></li>
-              <li><a href="#" class="hover:text-white">Blog</a></li>
-              <li><a href="#" class="hover:text-white">FAQ</a></li>
-              <li><a href="#" class="hover:text-white">Email us</a></li>
-              <li><a href="#" class="hover:text-white">Terms</a></li>
-              <li><a href="#" class="hover:text-white">Privacy</a></li>
+              <li><a href="#" class="hover:text-white">幫助中心</a></li>
+              <li><a href="#" class="hover:text-white">部落格</a></li>
+              <li><a href="#" class="hover:text-white">常見問題</a></li>
+              <li><a href="#" class="hover:text-white">聯繫我們</a></li>
+              <li><a href="#" class="hover:text-white">條款</a></li>
+              <li><a href="#" class="hover:text-white">隱私</a></li>
             </ul>
           </div>
         </div>

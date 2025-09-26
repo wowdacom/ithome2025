@@ -77,7 +77,7 @@
               {{ formatDate(article.created_at) }}
             </span>
             <span class="text-sm text-gray-500">
-              {{ calculateReadingTime(article.content) }} min read
+              {{ calculateReadingTime(article.content) }} 分鐘閱讀
             </span>
           </div>
 
@@ -98,7 +98,9 @@
                     clip-rule="evenodd"
                   />
                 </svg>
-                {{ article.views || article.readCount || 0 }} views
+                <span class="text-sm text-gray-500">
+                  {{ article.views || article.readCount || 0 }} 次瀏覽
+                </span>
               </div>
             </div>
 
@@ -208,7 +210,7 @@
               </p>
               <div class="flex items-center justify-between text-xs text-gray-500">
                 <span>{{ formatDate(relatedArticle.created_at) }}</span>
-                <span>{{ calculateReadingTime(relatedArticle.content) }} min read</span>
+                <span>{{ calculateReadingTime(relatedArticle.content) }} 分鐘閱讀</span>
               </div>
             </div>
           </article>
