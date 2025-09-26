@@ -6,6 +6,12 @@ export interface Article {
     slug: string
     created_at: string
     updated_at?: string
+    views?: number
+    readCount?: number
+    excerpt?: string
+    // 為了兼容性，同時提供 camelCase 版本
+    createdAt?: string
+    updatedAt?: string
 }
 
 export interface CreateArticleRequest {

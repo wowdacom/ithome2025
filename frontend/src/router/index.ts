@@ -6,7 +6,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/blog'
+      name: 'Home',
+      component: () => import('../views/blog/ArticleHub.vue')
     },
     {
       path: '/blog',
@@ -22,6 +23,12 @@ const router = createRouter({
           path: 'article/:id',
           name: 'ArticleDetail',
           component: () => import('../views/blog/ArticleDetail.vue'),
+          props: true
+        },
+        {
+          path: 'articles/:id',
+          name: 'ArticleDetailNew',
+          component: () => import('../views/blog/ArticleDetailNew.vue'),
           props: true
         }
       ]
