@@ -42,9 +42,8 @@
             </button>
             <button
               type="button"
-              @click="toggleAiPanel"
-              class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              :disabled="loading || aiPanel.loading"
+              @click="showAiAssistant = !showAiAssistant"
+              class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
             >
               🤖 AI 協助
             </button>
@@ -79,15 +78,15 @@
       </div>
 
       <!-- AI 協助面板 -->
-      <AiAssistPanel
-        :ai-panel="aiPanel"
-        :current-content="form.content"
-        @ai-assist="handleAiAssistRequest"
-        @update-prompt="updatePrompt"
-        @apply-result="handleApplyAiResult"
-        @append-result="handleAppendAiResult"
-        @clear-result="clearAiResult"
-      />
+      <div v-if="showAiAssistant" class="form-group">
+        <AIAssistant
+          :current-content="form.content"
+          :current-title="form.title"
+          @apply-suggestion="handleApplySuggestion"
+          @append-suggestion="handleAppendSuggestion"
+          @open-settings="handleOpenSettings"
+        />
+      </div>
 
       <div class="flex space-x-4">
         <button type="submit" :disabled="loading || !isFormValid" class="btn btn-primary flex-1">
@@ -102,10 +101,10 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { CreateArticleRequest } from '../types/article'
-import { useAiAssist } from '../composables/useAiAssist'
 import { useMarkdown } from '../composables/useMarkdown'
-import AiAssistPanel from './shared/AiAssistPanel.vue'
+import AIAssistant from './AIAssistant.vue'
 
 interface Props {
   loading?: boolean
@@ -120,9 +119,11 @@ withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+const router = useRouter()
 
-// 預覽功能
+// 響應式狀態
 const showPreview = ref(false)
+const showAiAssistant = ref(false)
 const { renderMarkdown } = useMarkdown()
 
 const previewContent = computed(() => {
@@ -138,10 +139,9 @@ const form = reactive<CreateArticleRequest>({
   content: '',
 })
 
-const { aiPanel, toggleAiPanel, handleAiAssist, resetAiPanel } = useAiAssist()
-
 const isFormValid = computed(() => form.title.trim() && form.category.trim() && form.content.trim())
 
+// 方法
 function handleSubmit() {
   if (!isFormValid.value) {
     return
@@ -156,28 +156,22 @@ function resetForm() {
     category: '',
     content: '',
   })
-  resetAiPanel()
 }
 
-function handleAiAssistRequest(content: string) {
-  handleAiAssist(content)
+function handleApplySuggestion(suggestion: string) {
+  form.content = suggestion
 }
 
-function updatePrompt(value: string) {
-  aiPanel.prompt = value
+function handleAppendSuggestion(suggestion: string) {
+  if (form.content.trim()) {
+    form.content += '\n\n' + suggestion
+  } else {
+    form.content = suggestion
+  }
 }
 
-function handleApplyAiResult(content: string) {
-  form.content = content
-}
-
-function handleAppendAiResult(content: string) {
-  form.content = content
-}
-
-function clearAiResult() {
-  aiPanel.result = ''
-  aiPanel.prompt = ''
+function handleOpenSettings() {
+  router.push('/admin/settings')
 }
 
 // 暴露組件方法供父組件使用

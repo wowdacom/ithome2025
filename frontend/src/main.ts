@@ -17,4 +17,9 @@ const authStore = useAuthStore()
 authStore.initialize()
 authStore.setupAuthListener()
 
+// 初始化設定狀態
+import { useSettingsStore } from './stores/settingsStore'
+const settingsStore = useSettingsStore()
+settingsStore.loadSettings()
+
 app.mount('#app')

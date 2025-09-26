@@ -55,6 +55,11 @@ const router = createRouter({
           path: 'articles',
           name: 'AdminArticles',
           component: () => import('../views/admin/ArticleManagement.vue')
+        },
+        {
+          path: 'settings',
+          name: 'AdminSettings',
+          component: () => import('../views/admin/AdminSettings.vue')
         }
       ]
     }

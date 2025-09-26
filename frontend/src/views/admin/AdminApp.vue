@@ -41,6 +41,13 @@
           >
             📝 新增文章
           </router-link>
+          <router-link
+            to="/admin/settings"
+            class="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm transition-colors duration-200"
+            active-class="!text-blue-600 !border-blue-600"
+          >
+            ⚙️ 個人設定
+          </router-link>
         </div>
       </div>
     </nav>
