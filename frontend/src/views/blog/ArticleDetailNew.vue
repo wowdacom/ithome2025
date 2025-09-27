@@ -216,17 +216,10 @@
           </article>
         </div>
       </section>
-    </main>
 
-    <!-- Comments Section (Future Enhancement) -->
-    <!--
-    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="bg-white rounded-lg shadow-sm border p-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">留言討論</h2>
-        <p class="text-gray-500">留言功能即將推出...</p>
-      </div>
-    </section>
-    -->
+  <!-- Comments (GitHub Issues via utterances) -->
+  <UtterancesComments v-if="article" :articleTitle="article.title" :currentPath="route.fullPath" repo="wowdacom/blog.comment" theme="dark-blue" class="mt-12" />
+    </main>
   </div>
 </template>
 
@@ -235,6 +228,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useArticleStore } from '@/stores/articleStore'
+import UtterancesComments from '@/components/UtterancesComments.vue'
 import type { Article } from '@/types/article'
 
 const route = useRoute()
