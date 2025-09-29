@@ -32,22 +32,29 @@
       <div class="form-group">
         <div class="flex items-center justify-between mb-3">
           <label for="content" class="form-label">內容</label>
-          <div class="flex items-center space-x-2">
-            <button
-              type="button"
-              @click="showPreview = !showPreview"
-              class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              {{ showPreview ? '隱藏預覽' : '顯示預覽' }}
-            </button>
-            <button
-              type="button"
-              @click="showAiAssistant = !showAiAssistant"
-              class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-            >
-              🤖 AI 協助
-            </button>
-          </div>
+                  <div class="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    @click="showPreview = !showPreview"
+                    class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                  >
+                    {{ showPreview ? '隱藏預覽' : '顯示預覽' }}
+                  </button>
+                  <button
+                    type="button"
+                    @click="showAiAssistant = !showAiAssistant"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                  >
+                    🤖 AI 協助
+                  </button>
+                  <button
+                    type="button"
+                    @click="toggleImageGenerator"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                  >
+                    🖼️ AI 產圖
+                  </button>
+                </div>
         </div>
 
         <div class="grid gap-4" :class="showPreview ? 'grid-cols-2' : 'grid-cols-1'">
@@ -88,6 +95,10 @@
         />
       </div>
 
+      <div v-if="showImageGenerator" class="form-group">
+        <AiImageGenerator @generated="handleImageGenerated" @cancel="() => (showImageGenerator = false)" />
+      </div>
+
       <div class="flex space-x-4">
         <button type="submit" :disabled="loading || !isFormValid" class="btn btn-primary flex-1">
           <span v-if="loading" class="loading-spinner mr-2"></span>
@@ -105,6 +116,7 @@ import { useRouter } from 'vue-router'
 import type { CreateArticleRequest } from '../types/article'
 import { useMarkdown } from '../composables/useMarkdown'
 import AIAssistant from './AIAssistant.vue'
+import AiImageGenerator from './AiImageGenerator.vue'
 
 interface Props {
   loading?: boolean
@@ -141,6 +153,12 @@ const form = reactive<CreateArticleRequest>({
 
 const isFormValid = computed(() => form.title.trim() && form.category.trim() && form.content.trim())
 
+const showImageGenerator = ref(false)
+
+function toggleImageGenerator() {
+  showImageGenerator.value = !showImageGenerator.value
+}
+
 // 方法
 function handleSubmit() {
   if (!isFormValid.value) {
@@ -172,6 +190,17 @@ function handleAppendSuggestion(suggestion: string) {
 
 function handleOpenSettings() {
   router.push('/admin/settings')
+}
+
+function handleImageGenerated(payload: { url: string; prompt: string }) {
+  // insert markdown image link into content
+  const markdown = `![${payload.prompt}](${payload.url})`
+  if (form.content.trim()) {
+    form.content += '\n\n' + markdown
+  } else {
+    form.content = markdown
+  }
+  showImageGenerator.value = false
 }
 
 // 暴露組件方法供父組件使用
